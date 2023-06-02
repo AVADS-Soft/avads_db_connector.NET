@@ -1,168 +1,172 @@
-﻿using System.Net.Sockets;
+﻿using System;
+using System.Net.Sockets;
+using System.Threading.Tasks;
 using FlowBufferEnvironment;
 
-namespace TSDBConnector;
-public class TcpWrapper : IDisposable
+namespace TSDBConnector
 {
-    public long Version;
-    private NetworkStream? stream;
-
-    private int awaitTick = 10;
-    private int timeout = 5000;
-
-    private bool useTimeout = false;
-    public int Timeout
+    public class TcpWrapper : IDisposable
     {
-        get => timeout;
-        set => timeout = value;
-    }
+        public long Version;
+        private NetworkStream? stream;
 
-    public async Task InitConnection(string ip, int port)
-    {
-        TcpClient client = new();
-        client.SendTimeout = client.ReceiveTimeout = Timeout;
-        try
+        private int awaitTick = 10;
+        private int timeout = 5000;
+
+        private bool useTimeout = false;
+        public int Timeout
         {
-            await client.ConnectAsync(ip, port);
-            stream = client.GetStream();
-            Version = await GetVersion();
-        } 
-        catch(Exception e)
-        {
-            // TODO: create special exceptions for various cases
-            throw new Exception("Connection init fail: " + e.Message);
+            get => timeout;
+            set => timeout = value;
         }
-    }
 
-    public void CloseConnection()
-    {
-        if(stream != null)
+        public async Task InitConnection(string ip, int port)
         {
-            stream.Close();
-        }
-    }
-
-
-    private async Task<byte[]> ReadBytesAsync(int count)
-    {
-        var timeout = Timeout;
-        if (stream == null)
-        {
-            throw new Exception("Connection is not inited");
-        }
-        while(!stream.DataAvailable)
-        {
-            timeout -= awaitTick;
-            await Task.Delay(awaitTick);
-            if (useTimeout && timeout < 0)
+            TcpClient client = new();
+            client.SendTimeout = client.ReceiveTimeout = Timeout;
+            try
             {
-                throw new Exception("Time out");
+                await client.ConnectAsync(ip, port);
+                stream = client.GetStream();
+                Version = await GetVersion();
+            } 
+            catch(Exception e)
+            {
+                // TODO: create special exceptions for various cases
+                throw new Exception("Connection init fail: " + e.Message);
             }
         }
-        if (stream.CanRead && stream.DataAvailable)
+
+        public void CloseConnection()
+        {
+            if(stream != null)
+            {
+                stream.Close();
+            }
+        }
+
+
+        private async Task<byte[]> ReadBytesAsync(int count)
+        {
+            var timeout = Timeout;
+            if (stream == null)
+            {
+                throw new Exception("Connection is not inited");
+            }
+            while(!stream.DataAvailable)
+            {
+                timeout -= awaitTick;
+                await Task.Delay(awaitTick);
+                if (useTimeout && timeout < 0)
+                {
+                    throw new Exception("Time out");
+                }
+            }
+            if (stream.CanRead && stream.DataAvailable)
+            {
+                try
+                {
+                    var bytes = new byte[count];
+                    await stream.ReadAsync(bytes);
+                    return bytes;
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("Error on read" + e.Message);
+                }
+            }
+            throw new Exception("Cannot read");
+        }
+
+        private async Task WriteAsync(byte[] bytes)
+        {
+            if (stream == null)
+            {
+                throw new Exception("Connection is not inited");
+            }
+            if (stream.CanWrite)
+            {
+                await stream.WriteAsync(bytes, 0, bytes.Length);
+            }
+
+        }
+
+        public async Task SendRequest(byte[] bytes)
         {
             try
             {
-                var bytes = new byte[count];
-                await stream.ReadAsync(bytes);
-                return bytes;
+                await WriteAsync(bytes);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
-                throw new Exception("Error on read" + e.Message);
+                throw new Exception("Error on send: " + e.Message);
+            }
+
+        }
+
+        public async Task CheckResponseState()
+        {
+            var state = await ReadBytesAsync(1);
+
+            if (state[0] != 0)
+            {
+                var err = await ReadError();
+                throw new Exception(err);
             }
         }
-        throw new Exception("Cannot read");
-    }
 
-    private async Task WriteAsync(byte[] bytes)
-    {
-        if (stream == null)
+        public async Task<byte[]> GetResponse()
         {
-            throw new Exception("Connection is not inited");
+            var state = await ReadBytesAsync(1);
+
+            if (state != null && state[0] == 0)
+            {
+                return await ReadAnswerBytes();
+            }
+            else
+            {
+                var err = await ReadError();
+                throw new Exception(err);
+            }
         }
-        if (stream.CanWrite)
+
+        private async Task<byte[]> ReadAnswerBytes()
         {
-            await stream.WriteAsync(bytes, 0, bytes.Length);
-        }
-        
-    }
+            var size = await GetPacketLength();
 
-    public async Task SendRequest(byte[] bytes)
-    {
-        try
+            return await ReadBytesAsync(size);
+        }
+
+        private async Task<string> ReadError()
         {
-            await WriteAsync(bytes);
+            var bytes = await ReadAnswerBytes();
+            var buff = new ReadBuffer(bytes);
+            return buff.GetString();
         }
-        catch(Exception e)
+
+        private async Task<int> GetPacketLength()
         {
-            throw new Exception("Error on send: " + e.Message);
+            var packLenBytes = await ReadBytesAsync(4);
+            return ByteConverter.BytesToInt32(packLenBytes);
         }
-        
-    }
 
-    public async Task CheckResponseState()
-    {
-        var state = await ReadBytesAsync(1);
-
-        if (state[0] != 0)
+        public async Task<long> GetVersion()
         {
-            var err = await ReadError();
-            throw new Exception(err);
+            var getVersBuff = new FlowBuffer(ProtocolCmd.GetProtocolVersion);
+
+            await WriteAsync(getVersBuff.GetCmdPack());
+
+            var bytes = await GetResponse();
+
+            var vers = (long)bytes[0];
+
+            return vers;
+
         }
-    }
 
-    public async Task<byte[]> GetResponse()
-    {
-        var state = await ReadBytesAsync(1);
-
-        if (state != null && state[0] == 0)
+        public void Dispose()
         {
-            return await ReadAnswerBytes();
+            stream?.Dispose();
         }
-        else
-        {
-            var err = await ReadError();
-            throw new Exception(err);
-        }
-    }
-
-    private async Task<byte[]> ReadAnswerBytes()
-    {
-        var size = await GetPacketLength();
-
-        return await ReadBytesAsync(size);
-    }
-
-    private async Task<string> ReadError()
-    {
-        var bytes = await ReadAnswerBytes();
-        var buff = new ReadBuffer(bytes);
-        return buff.GetString();
-    }
-
-    private async Task<int> GetPacketLength()
-    {
-        var packLenBytes = await ReadBytesAsync(4);
-        return ByteConverter.BytesToInt32(packLenBytes);
-    }
-
-    public async Task<long> GetVersion()
-    {
-        var getVersBuff = new FlowBuffer(ProtocolCmd.GetProtocolVersion);
-
-        await WriteAsync(getVersBuff.GetCmdPack());
-
-        var bytes = await GetResponse();
-
-        var vers = (long)bytes[0];
-
-        return vers;
-
-    }
-
-    public void Dispose()
-    {
-        stream?.Dispose();
     }
 }

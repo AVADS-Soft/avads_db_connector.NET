@@ -1,1 +1,1 @@
-namespace TSDBConnector;
+//snamespace TSDBConnector;
