@@ -1,8 +1,8 @@
-/*using TSDBConnector;
+using TSDBConnector;
 public class SeriesT
 {
     private string name;
-    private Int32 type;
+    private Int64 type;
     private Int64 id;
     private string comment;
     private Int32 viewTimeMod;
@@ -11,8 +11,8 @@ public class SeriesT
     public SeriesT
     (
         string name,
-        Int32 type,
         Int64 id,
+        Int64 type,
         string comment = "",
         Int32 viewTimeMod = 0,
         LoopingT? loop = null,
@@ -28,11 +28,10 @@ public class SeriesT
     }
 
     public string Name  { get { return name; } }
-    public Int32 Type  { get { return type; } }
+    public Int64 Type  { get { return type; } }
     public Int64 Id  { get { return id; } }
     public string Comment { get { return comment; } }
     public Int32 ViewTimeMod  { get { return viewTimeMod; } }
     public LoopingT Looping  { get { return loop ?? new LoopingT(); } }
     public byte Class  { get { return dataClass; } }
 }
-*/

@@ -101,7 +101,11 @@ namespace TSDBConnector
             await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
             await api.wrap.CheckResponseState();
 
-            // TODO: change OpenedBaseList
+            if (OpenedBases.TryGetValue(baseName, out long id))
+            {
+                OpenedBases.Remove(baseName);
+                OpenedBases.Add(upd.Name, id);
+            }
         }
 
         public static async Task OpenBase(this TsdbClient api, string baseName)

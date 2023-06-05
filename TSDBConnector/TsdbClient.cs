@@ -61,11 +61,9 @@ namespace TSDBConnector
             return new Tuple<string, string>(ident[0], ident[1]);
         }
 
-        // TODO: refactor get hash, code ToHex method, support 4.6
         private string GetAuthHash(Tuple<string, string> info, string login, string pass)
         {
             var passBytes = System.Text.Encoding.UTF8.GetBytes(pass + info.Item1);
-
             using(var md5 = MD5.Create())
             {
                 var saltedPass = md5.ComputeHash(passBytes);
@@ -77,16 +75,7 @@ namespace TSDBConnector
                 var hexKey = Convert.ToHexString(hash).ToLower();
                 return hexKey;
             }
-
         }
-
-        // private T[] ConcatArrays<T>(T[] x, T[] y)
-        // {
-        //     var concat = new T[x.Length + y.Length];
-        //     Buffer.BlockCopy(x, 0, concat, 0, x.Length);
-        //     Buffer.BlockCopy(y, 0, concat, x.Length, y.Length);
-        //     return concat;
-        // }
 
 
         public void Dispose()

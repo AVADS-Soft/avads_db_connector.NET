@@ -359,6 +359,7 @@ namespace FlowBufferEnvironment
     	DataMathFunc          = 31,
     	DataAddRows           = 32,
     	DataGetLastValue      = 33,
+        GetSeriesById         = 34
     }
 
     public enum ProtocolCmd {
