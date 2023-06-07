@@ -122,6 +122,13 @@ namespace FlowBufferTest
 
         }
 
+        // TODO: full mecpack tests
+        /*[TestMethod]
+        public void MecPack()
+        {
+            
+        }*/
+
         private byte[] CutCmdByte(byte[] input)
         {
             var newLen = input.Length - 1;

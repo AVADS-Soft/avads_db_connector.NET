@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TSDBConnector;
 
+// TODO: split test files
 namespace TSDBConnectorTest
 {
     [TestClass]
@@ -38,7 +39,8 @@ namespace TSDBConnectorTest
                 await client.CreateConnection(host, port, login, pass);
                 // , "По русски",, 0, FsTypes.FS_MEMORY, , new LoopingT(1, "2m"), false, false, "", ""
                 var baseT = new BaseT("first base111", "./db/test", "10mb");
-
+                // TODO: test case: base is exist
+                // TODO: test case: invalid input
                 await client.CreateBase(baseT);
                 Assert.IsTrue(client.isConnected);
             }
@@ -56,6 +58,7 @@ namespace TSDBConnectorTest
             {
                 await client.CreateConnection(host, port, login, pass);
                 Assert.IsTrue(client.isConnected);
+                // TODO: test case: check varios count of bases
                 var list = await client.GetBasesList();
                 Assert.IsNotNull(list);
             }
@@ -77,7 +80,7 @@ namespace TSDBConnectorTest
                 var random = new Random();
                 int index = random.Next(list.Count);
                 var baseInst = list[index];
-
+                // TODO: test case: base not found
                 var singleBase = await client.GetBase(baseInst.Name);
                 Assert.IsNotNull(baseInst);
 
@@ -101,7 +104,8 @@ namespace TSDBConnectorTest
                 var random = new Random();
                 int index = random.Next(list.Count);
                 var baseToDelete = list[index];
-
+                // TODO: test case: base not found
+                // TODO: test case: base is opened
                 await client.RemoveBase(baseToDelete.Name);
 
                 var removed = await client.GetBase(baseToDelete.Name);
@@ -158,7 +162,9 @@ namespace TSDBConnectorTest
                 var newName = baseToUpdate.Name + "_upd";
                 var updateInfo = new BaseT(newName, baseEx!.Path, baseToUpdate.DbSize, comment: "UPDATE SUCCESS");
                 
-                // @fixme: base is corrupted after update (open via web client)
+                // TODO: test case: base not found 
+                // TODO: test case: invalid input
+
                 await client.UpdateBase(baseToUpdate.Name, updateInfo);
 
                 var updated = await client.GetBase(updateInfo.Name);
@@ -198,7 +204,7 @@ namespace TSDBConnectorTest
                 {
                     await client.CreateBase(baseT);
                 }
-
+                // TODO: test case: base not found
                 await client.OpenBase(baseT.Name);
                 var opened = await client.GetBase(baseT.Name);
                 Assert.IsNotNull(opened);
@@ -228,7 +234,7 @@ namespace TSDBConnectorTest
                 }
 
                 await client.OpenBase(baseT.Name);
-
+                // TODO: test case: base not found
                 await client.CloseBase(baseT.Name);
                 var opened = await client.GetBase(baseT.Name);
                 Assert.IsNotNull(opened);
@@ -294,7 +300,7 @@ namespace TSDBConnectorTest
                 // TODO: fix tests
                 var baseEx = await PrepareBase(client);
                 Assert.IsNotNull(baseEx);
-
+                // TODO: test case: check various count of series
                 var serList = await client.GetSeriesList(baseEx.Name);
 
                 Assert.IsNotNull(serList);
@@ -316,7 +322,10 @@ namespace TSDBConnectorTest
 
                 // TODO: fix tests
                 var seriesT = await PrepareSeries(client);
+                // TODO: test case: check various series, check series not found
 
+                // TODO: test case: get series by id
+                // TODO: test case: get series by name
                 Assert.IsNotNull(seriesT);
             }
             catch (Exception e)
@@ -339,6 +348,7 @@ namespace TSDBConnectorTest
 
                 var newSeries = new SeriesT("zero", 12, 1);
                 await client.AddSeries(baseEx.Name, newSeries);
+                // TODO: test case: check series already exist
                 var series = await client.GetSeries(baseEx.Name, newSeries.Name);
                 Assert.IsNotNull(series);
             }
@@ -363,7 +373,7 @@ namespace TSDBConnectorTest
                 var seriesEx = tuple.Item1;
                 var baseName = tuple.Item2;
                 Assert.IsNotNull(seriesEx);
-
+                // TODO: test case: check series not found
                 await client.RemoveSeries(baseName, seriesEx.Id);
 
                 var series = await client.GetSeries(baseName, seriesEx.Name);
@@ -392,7 +402,9 @@ namespace TSDBConnectorTest
                 var seriesUpdate = new SeriesT("UPDATED", seriesEx.Id, 27, "UPDATE_SUCCS");
 
                 await client.UpdateSeries(baseName, seriesUpdate);
-
+                // TODO: test case: base not found
+                // TODO: test case: series not found
+                // TODO: test case: invalid input
                 var upd = await client.GetSeriesById(baseName, seriesEx.Id);
                 Assert.IsNotNull(upd);
 

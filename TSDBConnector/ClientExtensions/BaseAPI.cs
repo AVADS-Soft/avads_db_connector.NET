@@ -148,6 +148,15 @@ namespace TSDBConnector
             }
         }
 
+        public static long GetTempBaseId(this TsdbClient api, string baseName)
+        {
+            if (OpenedBases.TryGetValue(baseName, out long id))
+            {
+                return id;
+            }
+            return -1;
+        }
+
         private static BaseT ExtractBase(ref ReadBuffer buffer)
         {
             var name = buffer.GetString();

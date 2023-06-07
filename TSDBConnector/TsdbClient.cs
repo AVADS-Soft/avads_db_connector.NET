@@ -56,20 +56,20 @@ namespace TSDBConnector
 
         private Tuple<string, string> SplitLoginInfo(byte [] bytes)
         {
-            var str = System.Text.Encoding.UTF8.GetString(bytes);
+            var str = ByteConverter.BytesToString(bytes);
             string[] ident = str.Split('\0');
             return new Tuple<string, string>(ident[0], ident[1]);
         }
 
         private string GetAuthHash(Tuple<string, string> info, string login, string pass)
         {
-            var passBytes = System.Text.Encoding.UTF8.GetBytes(pass + info.Item1);
+            var passBytes = ByteConverter.StringToBytes(pass + info.Item1);
             using(var md5 = MD5.Create())
             {
                 var saltedPass = md5.ComputeHash(passBytes);
                 var hexSalted = Convert.ToHexString(saltedPass).ToLower();
 
-                var keyBytes = System.Text.Encoding.UTF8.GetBytes(hexSalted + info.Item2);
+                var keyBytes = ByteConverter.StringToBytes(hexSalted + info.Item2);
 
                 byte[] hash = md5.ComputeHash(keyBytes);
                 var hexKey = Convert.ToHexString(hash).ToLower();

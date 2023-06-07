@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Remoting;
 
 namespace FlowBufferEnvironment
 {
@@ -37,7 +38,8 @@ namespace FlowBufferEnvironment
         {
             byte[] pack;
             var buffLen = buffer.Count;
-            if (buffLen > 0) {
+            if (buffLen > 0)
+            {
                 var total = 5 + buffLen;
                 pack = new byte[total];
                 var lenInBytes = ByteConverter.Int32ToBytes(buffLen);
@@ -65,7 +67,7 @@ namespace FlowBufferEnvironment
             }
             else
             {
-                stringInBytes = System.Text.Encoding.UTF8.GetBytes(value);
+                stringInBytes = ByteConverter.StringToBytes(value);
                 len = stringInBytes.Length;
             }
             var lenInBytes = ByteConverter.Int32ToBytes(len);
@@ -117,8 +119,7 @@ namespace FlowBufferEnvironment
 
         public void AddBool(bool value)
         {
-            byte bVal = value? (byte)1 : (byte)0;
-            buffer.Add(bVal);
+            buffer.Add(ByteConverter.BoolToByte(value));
         }
 
         public void AddMap()
@@ -165,7 +166,7 @@ namespace FlowBufferEnvironment
                 return string.Empty;
             }
 
-            var str = System.Text.Encoding.UTF8.GetString(strInBytes);
+            var str = ByteConverter.BytesToString(strInBytes);
 
             return str;
         }
@@ -275,15 +276,32 @@ namespace FlowBufferEnvironment
             return result;
         }
 
+        public static byte BoolToByte(bool target)
+        {
+            return target? (byte)1 : (byte)0;
+        }
+
+        public static byte[] FloatToBytes(float target)
+        {
+            Int32 raw = BitConverter.SingleToInt32Bits(target);
+            return Int64ToBytes(raw);
+        }
+
         public static byte[] DoubleToBytes(double target)
         {
             long raw = BitConverter.DoubleToInt64Bits(target);
             return Int64ToBytes(raw);
         }
 
+        public static byte[] StringToBytes(string target)
+        {
+            return System.Text.Encoding.UTF8.GetBytes(target);
+        }
+
         public static Int16 BytesToInt16(byte[] bytes)
         {
-            if (System.BitConverter.IsLittleEndian) {
+            if (System.BitConverter.IsLittleEndian)
+            {
                 Array.Reverse(bytes);
             }
             return System.BitConverter.ToInt16(bytes, 0);
@@ -291,7 +309,8 @@ namespace FlowBufferEnvironment
 
         public static Int32 BytesToInt32(byte[] bytes)
         {
-            if (System.BitConverter.IsLittleEndian) {
+            if (System.BitConverter.IsLittleEndian)
+            {
                 Array.Reverse(bytes);
             }
             return System.BitConverter.ToInt32(bytes, 0);
@@ -299,22 +318,115 @@ namespace FlowBufferEnvironment
 
         public static Int64 BytesToInt64(byte[] bytes)
         {
-            if (System.BitConverter.IsLittleEndian) {
+            if (System.BitConverter.IsLittleEndian)
+            {
                 Array.Reverse(bytes);
             }
             return System.BitConverter.ToInt64(bytes, 0);
         }
 
+        public static double BytesToFloat(byte[] bytes)
+        {
+            if (System.BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bytes);
+            }
+            return System.BitConverter.ToSingle(bytes, 0);
+        }
+
         public static double BytesToDouble(byte[] bytes)
         {
-            if (System.BitConverter.IsLittleEndian) {
+            if (System.BitConverter.IsLittleEndian)
+            {
                 Array.Reverse(bytes);
             }
             return System.BitConverter.ToDouble(bytes, 0);
         }
+
+        public static string BytesToString(byte[] bytes)
+        {
+            return System.Text.Encoding.UTF8.GetString(bytes);
+        }
+
+        public static byte[] AtomicToBytes(dynamic value)
+        {
+            if (value == null) throw new ArgumentNullException();
+            
+            switch(value)
+            {
+                case byte[] bArr:
+                    if (bArr.Length > 8) throw new Exception("Invalid type for atomic");
+                    else return FillUpBytes(bArr);
+                case Boolean b:
+                {
+                    byte[] bytes = new byte[8];
+                    bytes[7] = BoolToByte(b);
+                    return bytes;
+                }
+                case SByte sbte:
+                {
+                    byte[] bytes = new byte[8];
+                    bytes[7] = (byte) sbte;
+                    return bytes;
+                }  
+                case Int16 int16:
+                    return Int64ToBytes(int16);
+                case Int32 int32:
+                    return Int64ToBytes(int32);
+                case Int64 int64:
+                    return Int64ToBytes(int64);
+                case Byte bte:
+                {
+                    byte[] bytes = new byte[8];
+                    bytes[7] = bte;
+                    return bytes;
+                }
+                case UInt16 uint16:
+                    return Int64ToBytes((Int64)uint16);
+                case UInt32 uint32:
+                    return Int64ToBytes((Int64)uint32);
+                case UInt64 uint64:
+                    return Int64ToBytes((Int64)uint64);
+                case Single single:
+                    return FloatToBytes(single);
+                case Double dble:
+                    return DoubleToBytes(dble);
+                case Char ch:
+                    var charBytes = StringToBytes(new String(new char[]{ ch }));
+                    return FillUpBytes(charBytes);
+                default:
+                    throw new Exception("Invalid type for atomic");
+            }
+        }
+
+        public static byte[] BlobToBytes(dynamic value)
+        {
+            if (value == null) throw new ArgumentNullException();
+            
+            switch(value)
+            {
+                // TODO: assure empty string encoding correctness
+                case String str:
+                    return StringToBytes(str);
+                case byte[]:
+                    return (byte[])value;
+                default:
+                    throw new Exception("Invalid type for blob"); 
+            }
+        }
+
+
+        private static byte[] FillUpBytes(byte[] data, int arrCount = 8)
+        {
+            if (data.Length >= arrCount) return data;
+            var fillment = new byte[arrCount];
+            data.CopyTo(fillment, arrCount - data.Length);
+            return fillment;
+        }
     }
 
-    public enum BufferMapValueType {
+    public enum BufferMapValueType
+    {
         String,
         Int,
         Float,
@@ -324,7 +436,8 @@ namespace FlowBufferEnvironment
         Bytes
     }
 
-    public enum CmdType {
+    public enum CmdType
+    {
         Disconnect            = 0,
     	BaseCreate            = 1,
     	BaseOpen              = 2,
@@ -362,10 +475,48 @@ namespace FlowBufferEnvironment
         GetSeriesById         = 34
     }
 
-    public enum ProtocolCmd {
+    public enum ProtocolCmd
+    {
         LoginGetKeys       = 0,
     	LoginValidPass     = 1,
     	RestoreSession     = 2,
     	GetProtocolVersion = 254
+    }
+
+    public enum MecTypes
+    {
+        BOOL = 0,
+        SINT = 1,
+        INT  = 2,
+        DINT = 3,
+        LINT = 4,
+        USINT = 5,
+        UINT = 6,
+        UDINT = 7,
+        ULINT = 8,
+        REAL = 9,
+        LREAL = 10,
+        TIME = 11,
+        LTIME = 12,
+        DATE = 13,
+        LDATE = 14,
+        TIME_OF_DAY = 15,
+        LTIME_OF_DAY = 16,
+        DATE_AND_TIME = 17,
+        LDATE_AND_TIME = 18,
+        STRING = 19,
+        WSTRING = 20,
+        CHAR = 21,
+        WCHAR = 22, 
+        BYTE = 23,
+        WORD = 24,
+        DWORD = 25,
+        LWORD = 26,
+        SANY = 27,
+        BANY = 28,
+        TOD  = TIME_OF_DAY,
+        LTOD = LTIME_OF_DAY,
+        DT   = DATE_AND_TIME,
+        LDT  = LDATE_AND_TIME,
     }
 }
