@@ -97,7 +97,7 @@ namespace FlowBufferTest
         public void StringPackDepack()
         {
             var buff = new FlowBuffer(CmdType.BaseCreate);
-            var strs = new string[] {"Kekekek", "qqq0112sld,al", "maw21../123=-1", ""};
+            var strs = new string[] {"Kekekek", "qqq0112sld,al", "maw21../123=-1", "", "222value", "", ""};
             foreach(var str in strs)
             {
                 buff.AddString(str);

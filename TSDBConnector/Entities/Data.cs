@@ -1,3 +1,5 @@
+using FlowBufferEnvironment;
+
 namespace TSDBConnector
 {
     public class RowT
@@ -40,21 +42,33 @@ namespace TSDBConnector
     {
         private Int64 min;
         private Int64 max;
-        private Int32 rowCount;
+        private Int64 rowCount;
         private string startCp = "";
         private string endCp = "";
 
-        public BoundaryT() {}
+        public BoundaryT(Int64 min, Int64 max, Int64 rowCount, string startCp, string endCp)
+        {
+            this.min = min;
+            this.max = max;
+            this.rowCount = rowCount;
+            this.startCp = startCp;
+            this.endCp = endCp;
+        }
     }
 
     public class RowsCacheT
     {
-        private byte[] cache;
+        private FlowBuffer buffer;
 
-        public RowsCacheT(byte[] cache)
+        public RowsCacheT()
         {
-            this.cache = cache;
+            buffer = new FlowBuffer();
         }
-        public byte[] Cache  { get { return cache; } }
+        public byte[] Cache  { get { return buffer.GetBuffer(); } }
+
+        public void AddRec(long seriesId, byte dataClass, long time, UInt32 quality, object value)
+        {
+            buffer.AddRec(seriesId, dataClass, time, quality, value);
+        }
     }    
 }

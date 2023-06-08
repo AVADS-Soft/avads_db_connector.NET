@@ -7,7 +7,14 @@ namespace FlowBufferEnvironment
     public class FlowBuffer
     {
         List<byte> buffer = new List<byte>();
-        byte type; 
+        private byte type;
+
+        public byte Type { get { return type;} set {type = value;} }
+
+        public FlowBuffer()
+        {
+        }
+
         public FlowBuffer(CmdType cmd)
         {
             type = (byte)cmd;
@@ -18,10 +25,16 @@ namespace FlowBufferEnvironment
             type = (byte)cmd;
         }
 
+        public byte[] GetBuffer()
+        {
+            return buffer.ToArray();
+        }
 
         public byte[] GetCmdPack()
         {   
-            var buffBytes = buffer.ToArray();
+            buffer.Insert(0, type);
+            return buffer.ToArray();
+            /*var buffBytes = buffer.ToArray();
             var buffLength = buffBytes.Length;
 
             byte[] pack = new byte[buffLength + 1];
@@ -30,46 +43,50 @@ namespace FlowBufferEnvironment
 
             Buffer.BlockCopy(buffBytes, 0, pack, 1, buffLength);
 
-            return pack;
+            return pack;*/
         }
 
 
         public byte[] GetPackWithPayload()
         {
-            byte[] pack;
+            // byte[] pack;
+            // var buffLen = buffer.Count;
+            // if (buffLen > 0)
+            // {
+            //     var total = 5 + buffLen;
+            //     pack = new byte[total];
+            //     var lenInBytes = ByteConverter.Int32ToBytes(buffLen);
+            //     Buffer.BlockCopy(lenInBytes, 0, pack, 1, lenInBytes.Length);
+            //     var buffBytes = buffer.ToArray();
+            //     Buffer.BlockCopy(buffBytes, 0, pack, 5, buffBytes.Length);
+            // }
+            // else
+            // {
+            //     pack = new byte[1];
+            // }
+            // pack[0] = type;
+
+            // return pack;
+
             var buffLen = buffer.Count;
+            buffer.Insert(0, type);
             if (buffLen > 0)
             {
-                var total = 5 + buffLen;
-                pack = new byte[total];
                 var lenInBytes = ByteConverter.Int32ToBytes(buffLen);
-                Buffer.BlockCopy(lenInBytes, 0, pack, 1, lenInBytes.Length);
-                var buffBytes = buffer.ToArray();
-                Buffer.BlockCopy(buffBytes, 0, pack, 5, buffBytes.Length);
+                buffer.InsertRange(1, lenInBytes);
             }
-            else
-            {
-                pack = new byte[1];
-            }
-            pack[0] = type;
-
-            return pack;
+            return buffer.ToArray();
         }
 
         public void AddString(string value)
         {
             Int32 len;
-            byte[] stringInBytes;
-            if (string.IsNullOrEmpty(value))
-            {
-                len = 1;
-                stringInBytes = new byte[]{0};
-            }
-            else
+            byte[] stringInBytes = new byte[0];
+            if (!string.IsNullOrEmpty(value))
             {
                 stringInBytes = ByteConverter.StringToBytes(value);
-                len = stringInBytes.Length;
             }
+            len = stringInBytes.Length;
             var lenInBytes = ByteConverter.Int32ToBytes(len);
 
             buffer.AddRange(lenInBytes);
@@ -126,6 +143,8 @@ namespace FlowBufferEnvironment
         {
 
         }
+
+
     }
 
     public class ReadBuffer
@@ -348,7 +367,7 @@ namespace FlowBufferEnvironment
             return System.Text.Encoding.UTF8.GetString(bytes);
         }
 
-        public static byte[] AtomicToBytes(dynamic value)
+        public static byte[] AtomicToBytes(object value)
         {
             if (value == null) throw new ArgumentNullException();
             

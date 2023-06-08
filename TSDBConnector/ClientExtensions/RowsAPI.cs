@@ -4,60 +4,83 @@ namespace TSDBConnector
 {
     public static class TsdbRowsExtension
     {
-        /*private static async Task AddRow(this TsdbClient api)
+        public static void AddRec(this FlowBuffer buffer, long seriesId, byte dataClass, long time, UInt32 quality, object value)
         {
-            
-        }*/
+            buffer.AddInt64(seriesId);
+            buffer.AddByte(dataClass);
+            buffer.AddInt64(time);
 
-        public static async Task DataAddRows(this TsdbClient api)
-        {
-            
+            if (dataClass == 0)
+            {
+                byte[] bytes = ByteConverter.AtomicToBytes(value);
+                buffer.AddBytes(bytes);
+            }
+            else if (dataClass == 1)
+            {
+                byte[] bytes = ByteConverter.BlobToBytes(value);
+                buffer.AddInt32(bytes.Length);
+                buffer.AddBytes(bytes);
+            }
+            buffer.AddInt32((Int32)quality);
         }
-
-        // TODO: create shorthand adding row data to buffer;
-
-
-        // TODO: create enum for dataClass
-        public static async Task DataAddRow(this TsdbClient api, string baseName, long seriesId, byte dataClass, long time, UInt32 quality, dynamic value)
+        public static async Task DataAddRows(this TsdbClient api, string baseName, RowsCacheT rows)
         {
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
                 var reqBuffer = new FlowBuffer(CmdType.DataAddRow);
                 reqBuffer.AddInt64(baseId);
-                reqBuffer.AddInt64(seriesId);
-                reqBuffer.AddByte(dataClass);
-                reqBuffer.AddInt64(time);
-                
-                
-                // TODO: add try catch
-                if (dataClass == 0)
-                {
-                    byte[] bytes = ByteConverter.AtomicToBytes(value);
-                    reqBuffer.AddBytes(bytes);
-                }
-                else if (dataClass == 1)
-                {
-                    byte[] bytes = ByteConverter.BlobToBytes(value);
-                    reqBuffer.AddInt32(bytes.Length);
-                    reqBuffer.AddBytes(bytes);
-                }
-
-                // ??? Add new 4 byte zeros?
+                reqBuffer.AddBytes(rows.Cache);
 
                 await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
 
                 await api.wrap.CheckResponseState();
-
             }
         }
 
-        
-
-        public static async Task DataAddRowCache(this TsdbClient api)
+        public static async Task<long> DataAddRowsCache(this TsdbClient api, string baseName, RowsCacheT rows)
         {
-            
+            var baseId = api.GetTempBaseId(baseName);
+            if (baseId != -1)
+            {
+                var reqBuffer = new FlowBuffer(CmdType.DataAddRowCache);
+                reqBuffer.AddInt64(baseId);
+                reqBuffer.AddBytes(rows.Cache);
+
+                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+
+                var response = await api.wrap.GetResponse();
+
+                var readBuffer = new ReadBuffer(response);
+
+                var count = readBuffer.GetInt64();
+
+                return count;
+            }
+            // TODO: throw exception everywhere on failed get base
+            return 0;
         }
+
+        // TODO: create shorthand adding row data to buffer;
+
+
+        // TODO: create enum for dataClass
+        public static async Task DataAddRow(this TsdbClient api, string baseName, long seriesId, byte dataClass, long time, UInt32 quality, object value)
+        {
+            var baseId = api.GetTempBaseId(baseName);
+            if (baseId != -1)
+            {
+                var reqBuffer = new FlowBuffer(CmdType.DataAddRow);
+                reqBuffer.AddInt64(baseId);
+
+                reqBuffer.AddRec(seriesId, dataClass, time, quality, value);
+
+                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+
+                await api.wrap.CheckResponseState();
+            }
+        }
+
 
         public static async Task<RowT?> DataGetLastValue(this TsdbClient api, string baseName, long seriesId, byte dataClass)
         {
@@ -278,19 +301,70 @@ namespace TSDBConnector
             
         }
         
-        public static async Task DataDeleteRow(this TsdbClient api)
+        public static async Task DataDeleteRow(this TsdbClient api, string baseName, long seriesId, long t)
         {
-            
+            var baseId = api.GetTempBaseId(baseName);
+            if (baseId != -1)
+            {
+                // TODO: remove dupl, send with t request?
+                var reqBuffer = new FlowBuffer(CmdType.DataDeleteRow);
+                reqBuffer.AddInt64(baseId);
+                reqBuffer.AddInt64(seriesId);
+                reqBuffer.AddInt64(t);
+
+                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+
+                await api.wrap.CheckResponseState();
+            }
         }
         
-        public static async Task DataDeleteRows(this TsdbClient api)
+        public static async Task<long> DataDeleteRows(this TsdbClient api, string baseName, long seriesId, long timeStart, long timeEnd)
         {
-            
+            var baseId = api.GetTempBaseId(baseName);
+            if (baseId != -1)
+            {
+                // TODO: remove dupl, send with t request?
+                var reqBuffer = new FlowBuffer(CmdType.DataDeleteRows);
+                reqBuffer.AddInt64(baseId);
+                reqBuffer.AddInt64(seriesId);
+                reqBuffer.AddInt64(timeStart);
+                reqBuffer.AddInt64(timeEnd);
+
+                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+
+                var response = await api.wrap.GetResponse();
+
+                var readBuffer = new ReadBuffer(response);
+                var count = readBuffer.GetInt64();
+                return count;
+            }
+            return 0;
         }
 
-        public static async Task DataGetBoundary(this TsdbClient api)
+        public static async Task<BoundaryT?> DataGetBoundary(this TsdbClient api, string baseName, long seriesId)
         {
-            
+            var baseId = api.GetTempBaseId(baseName);
+            if (baseId != -1)
+            {
+                // TODO: remove dupl, send with t request?
+                var reqBuffer = new FlowBuffer(CmdType.DataGetBoundary);
+                reqBuffer.AddInt64(baseId);
+                reqBuffer.AddInt64(seriesId);
+                // TODO: refactor GETPACK, compute according buffer entries
+                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+
+                var response = await api.wrap.GetResponse();
+
+                var readBuffer = new ReadBuffer(response);
+                var min = readBuffer.GetInt64();
+                var max = readBuffer.GetInt64();
+                var count = readBuffer.GetInt64();
+                var startCp = readBuffer.GetString();
+                var endCp = readBuffer.GetString();
+
+                return new BoundaryT(min, max, count, startCp, endCp);
+            }
+            return null;
         }
     }
 }
