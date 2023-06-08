@@ -54,6 +54,12 @@ namespace TSDBConnector
             this.startCp = startCp;
             this.endCp = endCp;
         }
+
+        public Int64 Min  { get { return min; } }
+        public Int64 Max  { get { return max; } }
+        public Int64 RowCount  { get { return rowCount; } }
+        public string StartCp  { get { return startCp; } }
+        public string EndCp  { get { return endCp; } }
     }
 
     public class RowsCacheT

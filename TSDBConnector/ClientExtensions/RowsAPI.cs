@@ -63,7 +63,7 @@ namespace TSDBConnector
 
         // TODO: create shorthand adding row data to buffer;
 
-
+        // TODO: create override method 'add row' with rec as argument
         // TODO: create enum for dataClass
         public static async Task DataAddRow(this TsdbClient api, string baseName, long seriesId, byte dataClass, long time, UInt32 quality, object value)
         {
@@ -79,6 +79,7 @@ namespace TSDBConnector
 
                 await api.wrap.CheckResponseState();
             }
+            else throw new Exception("no available bases, possibly base is not opened");
         }
 
 
@@ -116,7 +117,7 @@ namespace TSDBConnector
             return null;
         }
 
-        public static async Task<RowT?> DataGetValueAtTime(this TsdbClient api, string baseName, long seriesId, long t, byte dataClass)
+        public static async Task<RowT?> DataGetValueAtTime(this TsdbClient api, string baseName, long seriesId, byte dataClass, long t)
         {
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
@@ -174,8 +175,9 @@ namespace TSDBConnector
             }
             return String.Empty;
         }
-
-        public static async Task<RecsWithCP?> DataGetRangeDirection(this TsdbClient api, string baseName, long seriesId, byte direct, long limit, long min, long max, short dpi)
+        
+        // TODO: add direction enum (tomax = 1, tomin = 2)
+        public static async Task<RecsWithCP?> DataGetRange(this TsdbClient api, string baseName, long seriesId, byte direct, long limit, long min, long max, short dpi)
         {
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
@@ -257,6 +259,7 @@ namespace TSDBConnector
             return null;
         }
 
+        // TODO: create arguments default values
         public static async Task<RecsWithCP?> DataGetRangeFromCP(this TsdbClient api, string baseName, string cp, byte direct, long limit, long min, long max, short dpi)
         {
             var baseId = api.GetTempBaseId(baseName);

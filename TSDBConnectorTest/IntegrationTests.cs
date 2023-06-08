@@ -193,20 +193,22 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestOpenBase()
         {
+            string baseName = "first base";
             using var client = new TsdbClient();
             try
             {
                 await client.CreateConnection(host, port, login, pass);
                 Assert.IsTrue(client.isConnected);
-                var baseT = new BaseT("first base", "./db/test", "10mb");
-                var baseEx = await client.GetBase(baseT.Name);
+                var baseT = new BaseT(baseName, "./db/test", "10mb");
+                
+                var baseEx = await client.GetBase(baseName);
                 if (baseEx == null)
                 {
                     await client.CreateBase(baseT);
                 }
                 // TODO: test case: base not found
-                await client.OpenBase(baseT.Name);
-                var opened = await client.GetBase(baseT.Name);
+                await client.OpenBase(baseName);
+                var opened = await client.GetBase(baseName);
                 Assert.IsNotNull(opened);
                 // TODO: check status value
                 //Assert.AreEqual(opened.Status, 3);
@@ -214,6 +216,10 @@ namespace TSDBConnectorTest
             catch (Exception e)
             {
                 throw new AssertFailedException(e.Message, e);
+            }
+            finally
+            {
+                await client.CloseBase(baseName);
             }
         }
 
@@ -232,14 +238,15 @@ namespace TSDBConnectorTest
                 {
                     await client.CreateBase(baseT);
                 }
-
                 await client.OpenBase(baseT.Name);
                 // TODO: test case: base not found
-                await client.CloseBase(baseT.Name);
-                var opened = await client.GetBase(baseT.Name);
-                Assert.IsNotNull(opened);
 
-                Assert.AreEqual(opened.Status, 0);
+                await client.CloseBase(baseT.Name);
+                var closed = await client.GetBase(baseT.Name);
+
+                Assert.IsNotNull(closed);
+
+                Assert.AreEqual(closed.Status, 0);
             }
             catch (Exception e)
             {
@@ -247,7 +254,7 @@ namespace TSDBConnectorTest
             }
         }
 
-        private async Task<BaseT?> PrepareBase(TsdbClient client)
+        public static async Task<BaseT?> PrepareBase(TsdbClient client)
         {
             var baseName = "TEST_Series";
             
@@ -267,7 +274,7 @@ namespace TSDBConnectorTest
         }
 
 
-        private async Task<Tuple<SeriesT?, string>> PrepareSeries(TsdbClient client)
+        public static async Task<Tuple<SeriesT?, string>> PrepareSeries(TsdbClient client)
         {
             var baseEx = await PrepareBase(client);
 

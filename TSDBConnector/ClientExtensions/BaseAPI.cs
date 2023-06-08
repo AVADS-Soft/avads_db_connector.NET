@@ -150,11 +150,9 @@ namespace TSDBConnector
 
         public static long GetTempBaseId(this TsdbClient api, string baseName)
         {
-            if (OpenedBases.TryGetValue(baseName, out long id))
-            {
-                return id;
-            }
-            return -1;
+            long id = -1;
+            OpenedBases.TryGetValue(baseName, out id);
+            return id;
         }
 
         private static BaseT ExtractBase(ref ReadBuffer buffer)
