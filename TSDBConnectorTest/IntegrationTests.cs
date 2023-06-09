@@ -21,7 +21,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
                 Assert.IsFalse(String.IsNullOrEmpty(client.sessionKey));
             }
             catch (Exception e)
@@ -42,7 +42,7 @@ namespace TSDBConnectorTest
                 // TODO: test case: base is exist
                 // TODO: test case: invalid input
                 await client.CreateBase(baseT);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
             }
             catch (Exception e)
             {
@@ -57,7 +57,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
                 // TODO: test case: check varios count of bases
                 var list = await client.GetBasesList();
                 Assert.IsNotNull(list);
@@ -75,7 +75,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
                 var list = await client.GetBasesList();
                 var random = new Random();
                 int index = random.Next(list.Count);
@@ -99,7 +99,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
                 var list = await client.GetBasesList();
                 var random = new Random();
                 int index = random.Next(list.Count);
@@ -124,7 +124,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
                 var list = await client.GetBasesList();
 
                 for (int i = 0; i < list.Count; i ++)
@@ -150,7 +150,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 var baseToUpdate = new BaseT("test update base", "./db/test", "10mb");
                 var baseEx = await client.GetBase(baseToUpdate.Name);
@@ -198,7 +198,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
                 var baseT = new BaseT(baseName, "./db/test", "10mb");
                 
                 var baseEx = await client.GetBase(baseName);
@@ -230,7 +230,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
                 // TODO: generate unique test baseName
                 var baseT = new BaseT("first base", "./db/test", "10mb");
                 var baseEx = await client.GetBase(baseT.Name);
@@ -303,7 +303,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
                 // TODO: fix tests
                 var baseEx = await PrepareBase(client);
                 Assert.IsNotNull(baseEx);
@@ -325,7 +325,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 // TODO: fix tests
                 var seriesT = await PrepareSeries(client);
@@ -348,7 +348,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
                 // TODO: fix tests
                 var baseEx = await PrepareBase(client);
                 Assert.IsNotNull(baseEx);
@@ -372,7 +372,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 // TODO: add baseName to SeriesT?
                 // del tuples, refactor tests
@@ -399,7 +399,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 var tuple = await PrepareSeries(client);
                 var seriesEx = tuple.Item1;

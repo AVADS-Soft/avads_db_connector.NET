@@ -23,7 +23,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)
@@ -64,7 +64,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)
@@ -117,7 +117,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)
@@ -180,7 +180,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)
@@ -227,7 +227,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)
@@ -285,7 +285,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)
@@ -351,7 +351,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)
@@ -417,7 +417,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)
@@ -475,7 +475,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)
@@ -531,7 +531,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)
@@ -582,7 +582,7 @@ namespace TSDBConnectorTest
             try
             {
                 await client.CreateConnection(host, port, login, pass);
-                Assert.IsTrue(client.isConnected);
+                Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
                 if (await client.GetBase(baseName) == null)

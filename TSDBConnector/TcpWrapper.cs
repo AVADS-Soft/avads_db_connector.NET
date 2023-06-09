@@ -7,8 +7,6 @@ namespace TSDBConnector
 {
     public class TcpWrapper : IDisposable
     {
-        private long version;
-        public long Version { get => version; }
         private NetworkStream? stream;
         private int awaitTick = 10;        
         private bool useTimeout = true;
@@ -20,12 +18,6 @@ namespace TSDBConnector
             set => timeout = value;
         }
 
-        private bool isConnected = false;
-
-        public bool IsConnected { get => isConnected; }
-
-
-
         public async Task InitConnection(string ip, int port)
         {
             TcpClient client = new();
@@ -33,13 +25,10 @@ namespace TSDBConnector
             {
                 await client.ConnectAsync(ip, port);
                 stream = client.GetStream();
-                //version = await GetVersion();
-                isConnected = true;
             } 
-            catch (Exception e)
+            catch (Exception)
             {
-                // TODO: create special exceptions for various cases
-                throw new Exception("Connection init fail: " + e.Message);
+                throw new TsdbConnectionRefused();
             }
         }
 
@@ -47,7 +36,6 @@ namespace TSDBConnector
         {
             if(stream != null)
             {
-                isConnected = false;
                 stream.Close();
             }
         }
@@ -76,9 +64,9 @@ namespace TSDBConnector
                     await stream.ReadAsync(bytes);
                     return bytes;
                 }
-                catch (SocketException e)
+                catch (SocketException)
                 {
-                    throw e;
+                    throw;
                 }
                 catch (Exception e)
                 {
@@ -134,7 +122,17 @@ class TsdbTimeOutException : Exception
     public TsdbTimeOutException(): base ("Timeout"){}
 }
 
+class TsdbConnectionRefused : Exception
+{
+    public TsdbConnectionRefused(): base ("Connection refused"){}
+}
+
 class TsdbProtocolException : Exception
 {
-    public TsdbProtocolException(string msg): base (msg){}
+    public TsdbProtocolException() {}
+}
+
+class TsdbCustomError : Exception
+{
+    public TsdbCustomError(string msg): base (msg){}
 }

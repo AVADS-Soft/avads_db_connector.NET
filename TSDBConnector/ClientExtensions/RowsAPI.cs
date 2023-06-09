@@ -75,9 +75,11 @@ namespace TSDBConnector
 
                 reqBuffer.AddRec(seriesId, dataClass, time, quality, value);
 
-                await api.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.Fetch(reqBuffer.GetPackWithPayload(), 1);
 
-                await api.CheckResponseState();
+                //await api.SendRequest(reqBuffer.GetPackWithPayload());
+
+                //await api.CheckResponseState();
             }
             else throw new Exception("no available bases, possibly base is not opened");
         }

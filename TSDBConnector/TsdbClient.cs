@@ -11,21 +11,36 @@ namespace TSDBConnector
         private TcpWrapper wrap;
 
         // TODO: add getters/setters
-        public bool isConnected = false;
+        private long version;
+        public long Version { get => version; }
+        private bool isConnected = false;
+
+        public bool IsConnected { get => isConnected; }
 
         public string sessionKey = String.Empty;
 
-        private bool inReconnectState = false;
+        //private bool inReconnectState = false;
 
         public TsdbClient()
         {
             wrap = new TcpWrapper();
         }
 
+        private string host = "";
+        private int port;
+        private string login = "";
+        private string password = "";
+
         public async Task CreateConnection(string host, int port, string login, string password)
         {
             await wrap.InitConnection(host, port);
 
+            this.host = host;
+            this.port = port;
+            this.login = login;
+            this.password = password;
+
+            version = await GetVersion();
             await Login(login, password);
         }   
 
@@ -36,11 +51,12 @@ namespace TSDBConnector
 
             flow.AddString(login);
 
-            await SendRequest(flow.GetCmdPack());
+            //await SendRequest(flow.GetCmdPack());
+            //var resp = await GetResponse();
 
-            var resp = await GetResponse();
+            var resp = await Fetch(flow.GetCmdPack());
 
-            Tuple<string, string> info = SplitLoginInfo(resp);
+            Tuple<string, string> info = SplitLoginInfo(resp.GetBuffer());
 
             string hash = GetAuthHash(info, login, password);
 
@@ -50,6 +66,8 @@ namespace TSDBConnector
             await SendRequest(authBuff.GetCmdPack());
 
             var authResp = await GetResponse();
+
+            //var authResp = await Fetch(authBuff.GetCmdPack());
 
             var authAnsBuffer = new ReadBuffer(authResp);
 
@@ -96,10 +114,6 @@ namespace TSDBConnector
             {
                 await wrap.WriteBytesAsync(bytes);
             }
-            catch(SocketException)
-            {
-                // TryReconnect();
-            }
             catch(Exception e)
             {
                 throw new Exception("Error on send: " + e.Message);
@@ -108,15 +122,26 @@ namespace TSDBConnector
 
         public async Task<byte[]> GetResponse()
         {
-            var state = await wrap.ReadBytesAsync(1);
-            if (state != null && state[0] == 0)
+            try
             {
-                return await wrap.ReadAnswerBytes();
+                var state = await wrap.ReadBytesAsync(1);
+                if (state != null && state[0] == 0)
+                {
+                    return await wrap.ReadAnswerBytes();
+                }
+                else
+                {
+                    var err = await wrap.ReadError();
+                    throw new TsdbCustomError(err);
+                }
             }
-            else
+            catch(TsdbProtocolException)
             {
-                var err = await wrap.ReadError();
-                throw new TsdbProtocolException(err);
+                throw;
+            }
+            catch(Exception e)
+            {
+                throw new Exception("Error on send: " + e.Message);
             }
         }
 
@@ -126,16 +151,103 @@ namespace TSDBConnector
             if (state[0] != 0)
             {
                 var err = await wrap.ReadError();
-                throw new TsdbProtocolException(err);
+                throw new TsdbCustomError(err);
             }
         }
 
-
-
-
-        public void TryReconnect()
+        public async Task<ReadBuffer> Fetch(byte[] request, byte type = 0)
         {
-            // if (inReconnectState) return;
+            try
+            {
+                await wrap.WriteBytesAsync(request);
+                var state = await wrap.ReadBytesAsync(1);
+                if (state != null && state[0] == 0)
+                {
+                    if (type == 0)
+                    { 
+                        var response = await wrap.ReadAnswerBytes();
+                        return new ReadBuffer(response);
+                    }
+                    else return new ReadBuffer(state);
+                }
+                else
+                {
+                    var err = await wrap.ReadError();
+                    throw new TsdbCustomError(err);
+                }
+            }
+            catch (Exception ex)
+            {
+                switch (ex)
+                {
+                    case IOException:
+                    case SocketException:
+                    case TsdbTimeOutException:
+                        isConnected = false;
+                        await Reconnect();                        
+                        await RestoreState();
+                        return await Fetch(request, type);
+                    case TsdbCustomError:
+                        throw;
+                    default:
+                        throw new Exception("fetch error: " + ex.Message);
+                }
+            }
+        }
+
+        private int AttemptsCount = -1;
+
+        private int AttemptsInterval = 1000;
+
+        private int currentAttempt = 0;
+
+        public async Task Reconnect()
+        {
+            if (isConnected) return;
+            if (String.IsNullOrEmpty(sessionKey)) throw new Exception("Unable to reconnect without session key");            
+            
+            //inReconnectState = true;
+            var inReconnectAttempt = true;
+            var restorePack = new FlowBuffer(ProtocolCmd.RestoreSession);
+                restorePack.AddString(sessionKey);
+            while (inReconnectAttempt)
+            {
+                try
+                {
+                    if (AttemptsCount != -1 && currentAttempt > AttemptsCount)
+                    {
+                        throw new Exception("Reconnect failed");
+                    }
+                    currentAttempt ++;
+                    
+                    // TODO: create options struct, and pass it in constructor
+                    await wrap.InitConnection(host, port);
+                    await wrap.WriteBytesAsync(restorePack.GetPackWithPayload());
+                    inReconnectAttempt = false;                    
+                }
+                catch(Exception ex)
+                {
+                    switch (ex)
+                    {
+                        case IOException:
+                        case SocketException:
+                        case TsdbTimeOutException:
+                        case TsdbConnectionRefused:
+                            await Task.Delay(AttemptsInterval);
+                            continue;
+                        default:
+                            throw;
+                    }
+                }
+                
+            }
+
+        }
+
+        private async Task RestoreState()
+        {
+            await Login(login, password);
+            // then reopen bases
         }
 
         public void Dispose()

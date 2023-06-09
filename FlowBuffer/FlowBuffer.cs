@@ -157,6 +157,11 @@ namespace FlowBufferEnvironment
             buffer = bytes;
         }
 
+        public byte[] GetBuffer()
+        {
+            return buffer;
+        }
+
         public string GetString()
         {
             if (buffer.Length < offset + 4)
