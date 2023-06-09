@@ -7,71 +7,47 @@ using FlowBufferEnvironment;
 namespace TSDBConnector
 {
     public class TsdbClient : IDisposable
-    {    
+    {
+        private TsdbCredentials credentials;
         private TcpWrapper wrap;
-
-        // TODO: add getters/setters
         private long version;
-        public long Version { get => version; }
         private bool isConnected = false;
-
+        private string sessionKey = String.Empty;
+        private int reconnectAttemptsCount = -1;
+        private int reconnectAttemptsInterval = 1000;
+        private int currentAttempt = 0;
+        public long Version { get => version; }
         public bool IsConnected { get => isConnected; }
-
-        public string sessionKey = String.Empty;
-
-        //private bool inReconnectState = false;
-
-        public TsdbClient()
+        public string SessionKey { get => sessionKey; }
+        public int ReconnectAttemptsCount { get => reconnectAttemptsCount; set => reconnectAttemptsCount = value; }
+        public int ReconnectAttemptsInterval { get => reconnectAttemptsInterval; set => reconnectAttemptsInterval = value; }
+        public TsdbClient(TsdbCredentials credentials)
         {
+            this.credentials = credentials;
             wrap = new TcpWrapper();
         }
 
-        private string host = "";
-        private int port;
-        private string login = "";
-        private string password = "";
-
-        public async Task CreateConnection(string host, int port, string login, string password)
+        public async Task Init()
         {
-            await wrap.InitConnection(host, port);
-
-            this.host = host;
-            this.port = port;
-            this.login = login;
-            this.password = password;
-
+            await wrap.InitConnection(credentials.ip, credentials.port);
             version = await GetVersion();
-            await Login(login, password);
+            await Login(credentials.login, credentials.password);
         }   
 
-        // TODO: refactor login
         private async Task Login(string login, string password)
         {
-            var flow = new FlowBuffer(ProtocolCmd.LoginGetKeys);
-
-            flow.AddString(login);
-
-            //await SendRequest(flow.GetCmdPack());
-            //var resp = await GetResponse();
+            var flow = new FlowBuffer(ProtocolCmd.LoginGetKeys).AddString(login);
 
             var resp = await Fetch(flow.GetCmdPack());
 
             Tuple<string, string> info = SplitLoginInfo(resp.GetBuffer());
-
             string hash = GetAuthHash(info, login, password);
 
-            var authBuff = new FlowBuffer(ProtocolCmd.LoginValidPass);
-            authBuff.AddString(hash);
+            var authPack = new FlowBuffer(ProtocolCmd.LoginValidPass).AddString(hash).GetCmdPack();
 
-            await SendRequest(authBuff.GetCmdPack());
+            var authBuff = await Fetch(authPack);
 
-            var authResp = await GetResponse();
-
-            //var authResp = await Fetch(authBuff.GetCmdPack());
-
-            var authAnsBuffer = new ReadBuffer(authResp);
-
-            sessionKey = authAnsBuffer.GetString();
+            sessionKey = authBuff.GetString();
             isConnected = true;
         }
 
@@ -89,38 +65,27 @@ namespace TSDBConnector
             {
                 var saltedPass = md5.ComputeHash(passBytes);
                 var hexSalted = Convert.ToHexString(saltedPass).ToLower();
-
                 var keyBytes = ByteConverter.StringToBytes(hexSalted + info.Item2);
-
                 byte[] hash = md5.ComputeHash(keyBytes);
                 var hexKey = Convert.ToHexString(hash).ToLower();
                 return hexKey;
             }
         }
 
-        // TODO: move get version
-        public async Task<long> GetVersion()
+        private async Task<long> GetVersion()
         {
-            var getVersBuff = new FlowBuffer(ProtocolCmd.GetProtocolVersion);
-            await wrap.WriteBytesAsync(getVersBuff.GetCmdPack());
-            var bytes = await GetResponse();
-            var vers = (long)bytes[0];
+            var pack = new FlowBuffer(ProtocolCmd.GetProtocolVersion).GetCmdPack();
+            var buff = await Fetch(pack, ResponseType.State);
+            var vers = (long)buff.GetByte();
             return vers;
         }
 
-        public async Task SendRequest(byte[] bytes)
+        private async Task SendRequest(byte[] bytes)
         {
-            try
-            {
-                await wrap.WriteBytesAsync(bytes);
-            }
-            catch(Exception e)
-            {
-                throw new Exception("Error on send: " + e.Message);
-            }
+            await wrap.WriteBytesAsync(bytes);
         }
 
-        public async Task<byte[]> GetResponse()
+        private async Task<byte[]> GetResponse()
         {
             try
             {
@@ -135,7 +100,7 @@ namespace TSDBConnector
                     throw new TsdbCustomError(err);
                 }
             }
-            catch(TsdbProtocolException)
+            catch(TsdbCustomError)
             {
                 throw;
             }
@@ -145,7 +110,7 @@ namespace TSDBConnector
             }
         }
 
-        public async Task CheckResponseState()
+        /*private async Task CheckResponseState()
         {
             var state = await wrap.ReadBytesAsync(1);
             if (state[0] != 0)
@@ -153,9 +118,9 @@ namespace TSDBConnector
                 var err = await wrap.ReadError();
                 throw new TsdbCustomError(err);
             }
-        }
+        }*/
 
-        public async Task<ReadBuffer> Fetch(byte[] request, byte type = 0)
+        public async Task<ReadBuffer> Fetch(byte[] request, ResponseType type = 0)
         {
             try
             {
@@ -195,34 +160,27 @@ namespace TSDBConnector
             }
         }
 
-        private int AttemptsCount = -1;
-
-        private int AttemptsInterval = 1000;
-
-        private int currentAttempt = 0;
 
         public async Task Reconnect()
         {
             if (isConnected) return;
             if (String.IsNullOrEmpty(sessionKey)) throw new Exception("Unable to reconnect without session key");            
             
-            //inReconnectState = true;
             var inReconnectAttempt = true;
-            var restorePack = new FlowBuffer(ProtocolCmd.RestoreSession);
-                restorePack.AddString(sessionKey);
+            var restorePack = new FlowBuffer(ProtocolCmd.RestoreSession).AddString(sessionKey);
             while (inReconnectAttempt)
             {
                 try
                 {
-                    if (AttemptsCount != -1 && currentAttempt > AttemptsCount)
+                    if (reconnectAttemptsCount != -1 && currentAttempt > reconnectAttemptsCount)
                     {
                         throw new Exception("Reconnect failed");
                     }
                     currentAttempt ++;
-                    
-                    // TODO: create options struct, and pass it in constructor
-                    await wrap.InitConnection(host, port);
-                    await wrap.WriteBytesAsync(restorePack.GetPackWithPayload());
+
+                    await wrap.InitConnection(credentials.ip, credentials.port);
+                    await wrap.WriteBytesAsync(restorePack.GetPayloadPack());
+
                     inReconnectAttempt = false;                    
                 }
                 catch(Exception ex)
@@ -233,21 +191,20 @@ namespace TSDBConnector
                         case SocketException:
                         case TsdbTimeOutException:
                         case TsdbConnectionRefused:
-                            await Task.Delay(AttemptsInterval);
+                            await Task.Delay(reconnectAttemptsInterval);
                             continue;
                         default:
                             throw;
                     }
                 }
-                
             }
-
         }
 
         private async Task RestoreState()
         {
-            await Login(login, password);
-            // then reopen bases
+            // TODO: create restore method
+            // TODO: move opend bases to client class
+            await Task.Delay(100);
         }
 
         public void Dispose()
@@ -258,3 +215,26 @@ namespace TSDBConnector
         }
     }
 }
+
+public struct TsdbCredentials
+{
+    public string ip;
+    public int port;
+    public string login;
+    public string password;
+
+    public TsdbCredentials(string ip, int port, string login, string password)
+    {
+        this.ip = ip;
+        this.port = port;
+        this.login = login;
+        this.password = password;
+    }
+}
+
+public enum ResponseType
+{
+    Payload = 0,
+    State = 1,
+}
+

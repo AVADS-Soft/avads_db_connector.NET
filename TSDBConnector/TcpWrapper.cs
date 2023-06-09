@@ -86,6 +86,7 @@ namespace TSDBConnector
             {
                 await stream.WriteAsync(bytes, 0, bytes.Length);
             }
+            else throw new Exception("Cannot write");
         }
 
         public async Task<byte[]> ReadAnswerBytes()

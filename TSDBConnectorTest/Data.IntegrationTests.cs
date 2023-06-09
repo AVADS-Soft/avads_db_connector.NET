@@ -7,10 +7,7 @@ namespace TSDBConnectorTest
     [TestClass]
     public class DataIntegrationTests
     {
-        string host = "127.0.0.1";
-        int port = 7777;
-        string login = "admin";
-        string pass = "admin";
+        TsdbCredentials credentials = new TsdbCredentials("127.0.0.1", 7777, "admin", "admin");
 
         // TODO: create [class initialize] method, mounting environment
         // and [clean up] on dispose    
@@ -19,10 +16,10 @@ namespace TSDBConnectorTest
         public async Task TestAddRec()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
@@ -60,10 +57,10 @@ namespace TSDBConnectorTest
         public async Task TestGetLastValue()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
@@ -113,10 +110,10 @@ namespace TSDBConnectorTest
         public async Task TestGetValueAtTime()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
@@ -176,10 +173,10 @@ namespace TSDBConnectorTest
         public async Task TestGetCP()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
@@ -223,10 +220,10 @@ namespace TSDBConnectorTest
         public async Task TestGetRange()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
@@ -281,10 +278,10 @@ namespace TSDBConnectorTest
         public async Task TestGetFromCP()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
@@ -347,10 +344,10 @@ namespace TSDBConnectorTest
         public async Task TestRangeGetFromCP()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
@@ -413,10 +410,10 @@ namespace TSDBConnectorTest
         public async Task TestDeleteRow()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
@@ -471,10 +468,10 @@ namespace TSDBConnectorTest
         public async Task TestDeleteRows()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
@@ -527,10 +524,10 @@ namespace TSDBConnectorTest
         public async Task TestGetBoundary()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;
@@ -578,10 +575,10 @@ namespace TSDBConnectorTest
         public async Task TestGeneration()
         {
             var baseName = "TEST_Series";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 SeriesT? seriesEx = null;

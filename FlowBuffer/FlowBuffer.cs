@@ -34,40 +34,11 @@ namespace FlowBufferEnvironment
         {   
             buffer.Insert(0, type);
             return buffer.ToArray();
-            /*var buffBytes = buffer.ToArray();
-            var buffLength = buffBytes.Length;
-
-            byte[] pack = new byte[buffLength + 1];
-
-            pack[0] = type;
-
-            Buffer.BlockCopy(buffBytes, 0, pack, 1, buffLength);
-
-            return pack;*/
         }
 
 
-        public byte[] GetPackWithPayload()
+        public byte[] GetPayloadPack()
         {
-            // byte[] pack;
-            // var buffLen = buffer.Count;
-            // if (buffLen > 0)
-            // {
-            //     var total = 5 + buffLen;
-            //     pack = new byte[total];
-            //     var lenInBytes = ByteConverter.Int32ToBytes(buffLen);
-            //     Buffer.BlockCopy(lenInBytes, 0, pack, 1, lenInBytes.Length);
-            //     var buffBytes = buffer.ToArray();
-            //     Buffer.BlockCopy(buffBytes, 0, pack, 5, buffBytes.Length);
-            // }
-            // else
-            // {
-            //     pack = new byte[1];
-            // }
-            // pack[0] = type;
-
-            // return pack;
-
             var buffLen = buffer.Count;
             buffer.Insert(0, type);
             if (buffLen > 0)
@@ -78,7 +49,7 @@ namespace FlowBufferEnvironment
             return buffer.ToArray();
         }
 
-        public void AddString(string value)
+        public FlowBuffer AddString(string value)
         {
             Int32 len;
             byte[] stringInBytes = new byte[0];
@@ -91,60 +62,60 @@ namespace FlowBufferEnvironment
 
             buffer.AddRange(lenInBytes);
             buffer.AddRange(stringInBytes);
+            return this;
         }
 
-        public void AddInt64(Int64 value)
+        public FlowBuffer AddInt64(Int64 value)
         {
             var bytes = ByteConverter.Int64ToBytes(value);
             buffer.AddRange(bytes);
+            return this;
         }
 
-        public void AddInt32(Int32 value)
+        public FlowBuffer AddInt32(Int32 value)
         {
             var bytes = ByteConverter.Int32ToBytes(value);
             buffer.AddRange(bytes);
+            return this;
         }
 
-        public void AddInt16(Int16 value)
+        public FlowBuffer AddInt16(Int16 value)
         {
             var bytes = ByteConverter.Int16ToBytes(value);
             buffer.AddRange(bytes);
+            return this;
         }
 
-        public void AddDouble(double value)
+        public FlowBuffer AddDouble(double value)
         {
             var bytes = ByteConverter.DoubleToBytes(value);
             buffer.AddRange(bytes);
+            return this;
         }
 
-        public void AddByte(byte value)
+        public FlowBuffer AddByte(byte value)
         {
             buffer.Add(value);
+            return this;
         }
 
-        public void AddBytes(byte[] value)
+        public FlowBuffer AddBytes(byte[] value)
         {
             buffer.AddRange(value);
+            return this;
         }
 
-        public void AddBytesWithLength(byte[] value)
-        {
-            var lengthBytes = ByteConverter.Int32ToBytes(value.Length);
-            buffer.AddRange(lengthBytes);
-            buffer.AddRange(value);
-        }
-
-        public void AddBool(bool value)
+        public FlowBuffer AddBool(bool value)
         {
             buffer.Add(ByteConverter.BoolToByte(value));
+            return this;
         }
 
+        // TODO: create add map method
         public void AddMap()
         {
 
         }
-
-
     }
 
     public class ReadBuffer
@@ -259,16 +230,7 @@ namespace FlowBufferEnvironment
 
     public static class ByteConverter
     {
-        // TODO: order bytes with endians
-
-        // lil endian here
-        // and lil end in tests
-
-
-        // big endian on remote server
-
-
-        // big endian hardcoded
+        // it always big endian in remote server
         public static byte[] Int16ToBytes(Int16 target)
         {
             var result = new byte[2];
@@ -439,7 +401,6 @@ namespace FlowBufferEnvironment
             }
         }
 
-
         private static byte[] FillUpBytes(byte[] data, int arrCount = 8)
         {
             if (data.Length >= arrCount) return data;
@@ -460,6 +421,8 @@ namespace FlowBufferEnvironment
         Bytes
     }
 
+
+// TODO: move cmds
     public enum CmdType
     {
         Disconnect            = 0,

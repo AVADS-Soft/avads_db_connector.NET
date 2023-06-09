@@ -14,9 +14,10 @@ namespace TSDBConnector
         public static async Task<List<BaseT>> GetBasesList(this TsdbClient api)
         {
             var reqBuffer = new FlowBuffer(CmdType.BaseGetList);
-            await api.SendRequest(reqBuffer.GetCmdPack());
-            var response = await api.GetResponse();
-            var readBuffer = new ReadBuffer(response);
+            /*await api.SendRequest(reqBuffer.GetCmdPack());
+            var response = await api.GetResponse();*/
+            var readBuffer = await api.Fetch(reqBuffer.GetCmdPack());
+            //new ReadBuffer(response);
             var count = readBuffer.GetInt64();
 
             var result = new List<BaseT>();
@@ -39,11 +40,12 @@ namespace TSDBConnector
         {
             try
             {
-                var reqBuffer = new FlowBuffer(CmdType.BaseGetInfo);
-                reqBuffer.AddString(baseName);
-                await api.SendRequest(reqBuffer.GetPackWithPayload());
-                var response = await api.GetResponse();
-                var readBuffer = new ReadBuffer(response);
+                var reqBuffer = new FlowBuffer(CmdType.BaseGetInfo).AddString(baseName);
+               /*reqBuffer;
+                await api.SendRequest(reqBuffer.GetPayloadPack());
+                var response = await api.GetResponse();*/
+                var readBuffer =  await api.Fetch(reqBuffer.GetPayloadPack());
+                //new ReadBuffer(response);
                 var baseT = ExtractBase(ref readBuffer);
                 return baseT;
             }
@@ -72,34 +74,38 @@ namespace TSDBConnector
             reqBuffer.AddBool(baseT.AutoSave);
             reqBuffer.AddString(baseT.AutoSaveDuration);
             reqBuffer.AddString(baseT.AutoSaveInterval);
-            await api.SendRequest(reqBuffer.GetPackWithPayload());
-            await api.CheckResponseState();
+            //await api.SendRequest(reqBuffer.GetPayloadPack());
+            //await api.CheckResponseState();
+            await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
         }
 
         public static async Task RemoveBase(this TsdbClient api, string baseName)
         {
-            var reqBuffer = new FlowBuffer(CmdType.BaseRemove);
-            reqBuffer.AddString(baseName);
-            await api.SendRequest(reqBuffer.GetPackWithPayload());
-            await api.CheckResponseState();
+            var reqBuffer = new FlowBuffer(CmdType.BaseRemove).AddString(baseName);
+            //reqBuffer;
+            //await api.SendRequest(reqBuffer.GetPayloadPack());
+            //await api.CheckResponseState();
+            await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
         }
 
         public static async Task UpdateBase(this TsdbClient api, string baseName, BaseT upd)
         {
-            var reqBuffer = new FlowBuffer(CmdType.BaseUpdate);
-            reqBuffer.AddString(baseName);
-            reqBuffer.AddString(upd.Name);
-            reqBuffer.AddString(upd.Comment);
-            reqBuffer.AddString(upd.Path);
-            reqBuffer.AddString(upd.DbSize);
-            reqBuffer.AddByte(upd.Looping.Type);
-            reqBuffer.AddString(upd.Looping.Lt);
-            reqBuffer.AddBool(upd.AutoAddSeries);
-            reqBuffer.AddBool(upd.AutoSave);
-            reqBuffer.AddString(upd.AutoSaveDuration);
-            reqBuffer.AddString(upd.AutoSaveInterval);
-            await api.SendRequest(reqBuffer.GetPackWithPayload());
-            await api.CheckResponseState();
+            var reqBuffer = new FlowBuffer(CmdType.BaseUpdate)
+                .AddString(baseName)
+                .AddString(upd.Name)
+                .AddString(upd.Comment)
+                .AddString(upd.Path)
+                .AddString(upd.DbSize)
+                .AddByte(upd.Looping.Type)
+                .AddString(upd.Looping.Lt)
+                .AddBool(upd.AutoAddSeries)
+                .AddBool(upd.AutoSave)
+                .AddString(upd.AutoSaveDuration)
+                .AddString(upd.AutoSaveInterval);
+
+            await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
+            //await api.SendRequest(reqBuffer.GetPayloadPack());
+            //await api.CheckResponseState();
 
             if (OpenedBases.TryGetValue(baseName, out long id))
             {
@@ -122,13 +128,14 @@ namespace TSDBConnector
 
             TryOpenBases.Add(baseName, id);
 
-            var reqBuffer = new FlowBuffer(CmdType.BaseOpen);
+            var reqBuffer = new FlowBuffer(CmdType.BaseOpen).AddInt64(id).AddString(baseName);
 
-            reqBuffer.AddInt64(id);
-            reqBuffer.AddString(baseName);
+            
 
-            await api.SendRequest(reqBuffer.GetPackWithPayload());
-            await api.CheckResponseState();
+            //await api.SendRequest(reqBuffer.GetPayloadPack());
+            //await api.CheckResponseState();
+            await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
+
             TryOpenBases.Remove(baseName);
 
             OpenedBases.Add(baseName, id);
@@ -138,12 +145,13 @@ namespace TSDBConnector
         {
             if (OpenedBases.TryGetValue(baseName, out long id))
             {
-                var reqBuffer = new FlowBuffer(CmdType.BaseClose);
+                var reqBuffer = new FlowBuffer(CmdType.BaseClose).AddInt64(id);
 
-                reqBuffer.AddInt64(id);
+                //reqBuffer.AddInt64(id);
 
-                await api.SendRequest(reqBuffer.GetPackWithPayload());
-                await api.CheckResponseState();
+                //await api.SendRequest(reqBuffer.GetPayloadPack());
+                //await api.CheckResponseState();
+                await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
                 OpenedBases.Remove(baseName);
             }
         }

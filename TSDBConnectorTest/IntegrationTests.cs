@@ -9,20 +9,17 @@ namespace TSDBConnectorTest
     [TestClass]
     public class IntegrationTests
     {
-        string host = "127.0.0.1";
-        int port = 7777;
-        string login = "admin";
-        string pass = "admin";
+        TsdbCredentials credentials = new TsdbCredentials("127.0.0.1", 7777, "admin", "admin");
 
         [TestMethod]
         public async Task TestCreateConnection()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
-                Assert.IsFalse(String.IsNullOrEmpty(client.sessionKey));
+                Assert.IsFalse(String.IsNullOrEmpty(client.SessionKey));
             }
             catch (Exception e)
             {
@@ -33,10 +30,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestAddBase()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 // , "По русски",, 0, FsTypes.FS_MEMORY, , new LoopingT(1, "2m"), false, false, "", ""
                 var baseT = new BaseT("first base111", "./db/test", "10mb");
                 // TODO: test case: base is exist
@@ -53,10 +50,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestGetAllBases()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
                 // TODO: test case: check varios count of bases
                 var list = await client.GetBasesList();
@@ -71,10 +68,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestGetBase()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
                 var list = await client.GetBasesList();
                 var random = new Random();
@@ -95,10 +92,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestRemoveBase()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
                 var list = await client.GetBasesList();
                 var random = new Random();
@@ -120,10 +117,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestRemoveAllBases()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
                 var list = await client.GetBasesList();
 
@@ -146,10 +143,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestUpdateBase()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 var baseToUpdate = new BaseT("test update base", "./db/test", "10mb");
@@ -194,10 +191,10 @@ namespace TSDBConnectorTest
         public async Task TestOpenBase()
         {
             string baseName = "first base";
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
                 var baseT = new BaseT(baseName, "./db/test", "10mb");
                 
@@ -226,10 +223,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestCloseBase()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
                 // TODO: generate unique test baseName
                 var baseT = new BaseT("first base", "./db/test", "10mb");
@@ -299,10 +296,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestGetSeriesList()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
                 // TODO: fix tests
                 var baseEx = await PrepareBase(client);
@@ -321,10 +318,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestGetSeries()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 // TODO: fix tests
@@ -344,10 +341,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestAddSeries()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
                 // TODO: fix tests
                 var baseEx = await PrepareBase(client);
@@ -368,10 +365,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestRemoveSeries()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 // TODO: add baseName to SeriesT?
@@ -395,10 +392,10 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestUpdateSeries()
         {
-            using var client = new TsdbClient();
+            using var client = new TsdbClient(credentials);
             try
             {
-                await client.CreateConnection(host, port, login, pass);
+                await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
                 var tuple = await PrepareSeries(client);
@@ -431,6 +428,5 @@ namespace TSDBConnectorTest
     }
 }
 
-// TODO: return instance of api on CreateConnection?
 // TODO: improve tests for prevent locks (del all bases before/after each)
 // TODO: web client broadcast events bug 
