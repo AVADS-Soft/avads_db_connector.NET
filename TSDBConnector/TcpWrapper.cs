@@ -7,30 +7,36 @@ namespace TSDBConnector
 {
     public class TcpWrapper : IDisposable
     {
-        public long Version;
+        private long version;
+        public long Version { get => version; }
         private NetworkStream? stream;
-
-        private int awaitTick = 10;
+        private int awaitTick = 10;        
+        private bool useTimeout = true;
         private int timeout = 5000;
 
-        private bool useTimeout = false;
         public int Timeout
         {
             get => timeout;
             set => timeout = value;
         }
 
+        private bool isConnected = false;
+
+        public bool IsConnected { get => isConnected; }
+
+
+
         public async Task InitConnection(string ip, int port)
         {
             TcpClient client = new();
-            client.SendTimeout = client.ReceiveTimeout = Timeout;
             try
             {
                 await client.ConnectAsync(ip, port);
                 stream = client.GetStream();
-                Version = await GetVersion();
+                //version = await GetVersion();
+                isConnected = true;
             } 
-            catch(Exception e)
+            catch (Exception e)
             {
                 // TODO: create special exceptions for various cases
                 throw new Exception("Connection init fail: " + e.Message);
@@ -41,12 +47,12 @@ namespace TSDBConnector
         {
             if(stream != null)
             {
+                isConnected = false;
                 stream.Close();
             }
         }
 
-
-        private async Task<byte[]> ReadBytesAsync(int count)
+        public async Task<byte[]> ReadBytesAsync(int count)
         {
             var timeout = Timeout;
             if (stream == null)
@@ -59,7 +65,7 @@ namespace TSDBConnector
                 await Task.Delay(awaitTick);
                 if (useTimeout && timeout < 0)
                 {
-                    throw new Exception("Time out");
+                    throw new TsdbTimeOutException();
                 }
             }
             if (stream.CanRead && stream.DataAvailable)
@@ -70,6 +76,10 @@ namespace TSDBConnector
                     await stream.ReadAsync(bytes);
                     return bytes;
                 }
+                catch (SocketException e)
+                {
+                    throw e;
+                }
                 catch (Exception e)
                 {
                     throw new Exception("Error on read" + e.Message);
@@ -78,7 +88,7 @@ namespace TSDBConnector
             throw new Exception("Cannot read");
         }
 
-        private async Task WriteAsync(byte[] bytes)
+        public async Task WriteBytesAsync(byte[] bytes)
         {
             if (stream == null)
             {
@@ -88,56 +98,15 @@ namespace TSDBConnector
             {
                 await stream.WriteAsync(bytes, 0, bytes.Length);
             }
-
         }
 
-        public async Task SendRequest(byte[] bytes)
-        {
-            try
-            {
-                await WriteAsync(bytes);
-            }
-            catch(Exception e)
-            {
-                throw new Exception("Error on send: " + e.Message);
-            }
-
-        }
-
-        public async Task CheckResponseState()
-        {
-            var state = await ReadBytesAsync(1);
-
-            if (state[0] != 0)
-            {
-                var err = await ReadError();
-                throw new Exception(err);
-            }
-        }
-
-        public async Task<byte[]> GetResponse()
-        {
-            var state = await ReadBytesAsync(1);
-
-            if (state != null && state[0] == 0)
-            {
-                return await ReadAnswerBytes();
-            }
-            else
-            {
-                var err = await ReadError();
-                throw new Exception(err);
-            }
-        }
-
-        private async Task<byte[]> ReadAnswerBytes()
+        public async Task<byte[]> ReadAnswerBytes()
         {
             var size = await GetPacketLength();
-
             return await ReadBytesAsync(size);
         }
 
-        private async Task<string> ReadError()
+        public async Task<string> ReadError()
         {
             var bytes = await ReadAnswerBytes();
             var buff = new ReadBuffer(bytes);
@@ -150,23 +119,22 @@ namespace TSDBConnector
             return ByteConverter.BytesToInt32(packLenBytes);
         }
 
-        public async Task<long> GetVersion()
-        {
-            var getVersBuff = new FlowBuffer(ProtocolCmd.GetProtocolVersion);
 
-            await WriteAsync(getVersBuff.GetCmdPack());
-
-            var bytes = await GetResponse();
-
-            var vers = (long)bytes[0];
-
-            return vers;
-
-        }
 
         public void Dispose()
         {
             stream?.Dispose();
         }
     }
+}
+
+
+class TsdbTimeOutException : Exception
+{
+    public TsdbTimeOutException(): base ("Timeout"){}
+}
+
+class TsdbProtocolException : Exception
+{
+    public TsdbProtocolException(string msg): base (msg){}
 }

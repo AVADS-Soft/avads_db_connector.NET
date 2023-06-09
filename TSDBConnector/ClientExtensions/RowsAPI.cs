@@ -32,9 +32,9 @@ namespace TSDBConnector
                 reqBuffer.AddInt64(baseId);
                 reqBuffer.AddBytes(rows.Cache);
 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                await api.wrap.CheckResponseState();
+                await api.CheckResponseState();
             }
         }
 
@@ -47,9 +47,9 @@ namespace TSDBConnector
                 reqBuffer.AddInt64(baseId);
                 reqBuffer.AddBytes(rows.Cache);
 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                var response = await api.wrap.GetResponse();
+                var response = await api.GetResponse();
 
                 var readBuffer = new ReadBuffer(response);
 
@@ -75,9 +75,9 @@ namespace TSDBConnector
 
                 reqBuffer.AddRec(seriesId, dataClass, time, quality, value);
 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                await api.wrap.CheckResponseState();
+                await api.CheckResponseState();
             }
             else throw new Exception("no available bases, possibly base is not opened");
         }
@@ -92,9 +92,9 @@ namespace TSDBConnector
                 reqBuffer.AddInt64(baseId);
                 reqBuffer.AddInt64(seriesId);
 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                var response = await api.wrap.GetResponse();
+                var response = await api.GetResponse();
 
                 var readBuffer = new ReadBuffer(response);
 
@@ -127,9 +127,9 @@ namespace TSDBConnector
                 reqBuffer.AddInt64(seriesId);
                 reqBuffer.AddInt64(t);
 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                var response = await api.wrap.GetResponse();
+                var response = await api.GetResponse();
 
                 // TODO: create method, remove duplicate
                 var readBuffer = new ReadBuffer(response);
@@ -164,9 +164,9 @@ namespace TSDBConnector
                 reqBuffer.AddInt64(seriesId);
                 reqBuffer.AddInt64(t);
 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                var response = await api.wrap.GetResponse();
+                var response = await api.GetResponse();
 
                 var readBuffer = new ReadBuffer(response);
 
@@ -191,9 +191,9 @@ namespace TSDBConnector
                 reqBuffer.AddInt64(max);
                 reqBuffer.AddInt16(dpi);
                 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                var response = await api.wrap.GetResponse();
+                var response = await api.GetResponse();
 
                 var readBuffer = new ReadBuffer(response);
 
@@ -230,9 +230,9 @@ namespace TSDBConnector
                 reqBuffer.AddByte(direct);
                 reqBuffer.AddInt64(limit);
                 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                var response = await api.wrap.GetResponse();
+                var response = await api.GetResponse();
 
                 var readBuffer = new ReadBuffer(response);
                 // TODO: get recWith cp shorthand method, remove duplicate
@@ -274,9 +274,9 @@ namespace TSDBConnector
                 reqBuffer.AddInt64(max);
                 reqBuffer.AddInt16(dpi);
                 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                var response = await api.wrap.GetResponse();
+                var response = await api.GetResponse();
 
                 var readBuffer = new ReadBuffer(response);
                 // TODO: get recWith cp shorthand method, remove duplicate
@@ -315,9 +315,9 @@ namespace TSDBConnector
                 reqBuffer.AddInt64(seriesId);
                 reqBuffer.AddInt64(t);
 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                await api.wrap.CheckResponseState();
+                await api.CheckResponseState();
             }
         }
         
@@ -333,9 +333,9 @@ namespace TSDBConnector
                 reqBuffer.AddInt64(timeStart);
                 reqBuffer.AddInt64(timeEnd);
 
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                var response = await api.wrap.GetResponse();
+                var response = await api.GetResponse();
 
                 var readBuffer = new ReadBuffer(response);
                 var count = readBuffer.GetInt64();
@@ -354,9 +354,9 @@ namespace TSDBConnector
                 reqBuffer.AddInt64(baseId);
                 reqBuffer.AddInt64(seriesId);
                 // TODO: refactor GETPACK, compute according buffer entries
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-                var response = await api.wrap.GetResponse();
+                var response = await api.GetResponse();
 
                 var readBuffer = new ReadBuffer(response);
                 var min = readBuffer.GetInt64();

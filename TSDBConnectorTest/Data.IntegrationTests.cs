@@ -572,5 +572,57 @@ namespace TSDBConnectorTest
                 await client.CloseBase(baseName);
             }
         }
+
+
+        [TestMethod]
+        public async Task TestGeneration()
+        {
+            var baseName = "TEST_Series";
+            using var client = new TsdbClient();
+            try
+            {
+                await client.CreateConnection(host, port, login, pass);
+                Assert.IsTrue(client.isConnected);
+
+                SeriesT? seriesEx = null;
+                if (await client.GetBase(baseName) == null)
+                {
+                    var tuple = await IntegrationTests.PrepareSeries(client);
+                    baseName = tuple.Item2;
+                    seriesEx = tuple.Item1;
+                }
+                if (seriesEx == null)
+                {
+                    seriesEx = await client.GetSeries(baseName, "zero");
+                }
+
+                if (seriesEx == null) throw new ArgumentNullException();
+
+                await client.OpenBase(baseName);
+
+                var value = 0;
+                uint quality = 42;
+
+                for (int i = 0; i < 1000; i ++)
+                {
+                    if (value > 100) value = 0;
+                    var now = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, now, quality, value);
+                    value++;
+
+                    await Task.Delay(100);
+                }
+            }
+            catch (Exception e)
+            {
+                throw new AssertFailedException(e.Message, e);
+            }
+            finally
+            {
+                await client.CloseBase(baseName);
+            }
+        }
     }
+
+    // TODO: cache interact test cases
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using FlowBufferEnvironment;
@@ -7,12 +8,14 @@ namespace TSDBConnector
 {
     public class TsdbClient : IDisposable
     {    
-        public TcpWrapper wrap;
+        private TcpWrapper wrap;
 
         // TODO: add getters/setters
         public bool isConnected = false;
 
         public string sessionKey = String.Empty;
+
+        private bool inReconnectState = false;
 
         public TsdbClient()
         {
@@ -33,9 +36,9 @@ namespace TSDBConnector
 
             flow.AddString(login);
 
-            await wrap.SendRequest(flow.GetCmdPack());
+            await SendRequest(flow.GetCmdPack());
 
-            var resp = await wrap.GetResponse();
+            var resp = await GetResponse();
 
             Tuple<string, string> info = SplitLoginInfo(resp);
 
@@ -44,9 +47,9 @@ namespace TSDBConnector
             var authBuff = new FlowBuffer(ProtocolCmd.LoginValidPass);
             authBuff.AddString(hash);
 
-            await wrap.SendRequest(authBuff.GetCmdPack());
+            await SendRequest(authBuff.GetCmdPack());
 
-            var authResp = await wrap.GetResponse();
+            var authResp = await GetResponse();
 
             var authAnsBuffer = new ReadBuffer(authResp);
 
@@ -77,6 +80,63 @@ namespace TSDBConnector
             }
         }
 
+        // TODO: move get version
+        public async Task<long> GetVersion()
+        {
+            var getVersBuff = new FlowBuffer(ProtocolCmd.GetProtocolVersion);
+            await wrap.WriteBytesAsync(getVersBuff.GetCmdPack());
+            var bytes = await GetResponse();
+            var vers = (long)bytes[0];
+            return vers;
+        }
+
+        public async Task SendRequest(byte[] bytes)
+        {
+            try
+            {
+                await wrap.WriteBytesAsync(bytes);
+            }
+            catch(SocketException)
+            {
+                // TryReconnect();
+            }
+            catch(Exception e)
+            {
+                throw new Exception("Error on send: " + e.Message);
+            }
+        }
+
+        public async Task<byte[]> GetResponse()
+        {
+            var state = await wrap.ReadBytesAsync(1);
+            if (state != null && state[0] == 0)
+            {
+                return await wrap.ReadAnswerBytes();
+            }
+            else
+            {
+                var err = await wrap.ReadError();
+                throw new TsdbProtocolException(err);
+            }
+        }
+
+        public async Task CheckResponseState()
+        {
+            var state = await wrap.ReadBytesAsync(1);
+            if (state[0] != 0)
+            {
+                var err = await wrap.ReadError();
+                throw new TsdbProtocolException(err);
+            }
+        }
+
+
+
+
+        public void TryReconnect()
+        {
+            // if (inReconnectState) return;
+        }
 
         public void Dispose()
         {

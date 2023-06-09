@@ -12,9 +12,9 @@ namespace TSDBConnector
             var reqBuffer = new FlowBuffer(CmdType.SeriesGetAll);
             reqBuffer.AddString(baseName);
 
-            await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+            await api.SendRequest(reqBuffer.GetPackWithPayload());
 
-            var response = await api.wrap.GetResponse();
+            var response = await api.GetResponse();
 
             var readBuffer = new ReadBuffer(response);
             var count = readBuffer.GetInt64();
@@ -43,8 +43,8 @@ namespace TSDBConnector
                 var reqBuffer = new FlowBuffer(CmdType.SeriesGetInfo);
                 reqBuffer.AddString(baseName);
                 reqBuffer.AddString(seriesName);
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
-                var response = await api.wrap.GetResponse();
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
+                var response = await api.GetResponse();
                 var buffer = new ReadBuffer(response);
                 var seriesT = ExtractSeries(ref buffer);
                 return seriesT;
@@ -67,8 +67,8 @@ namespace TSDBConnector
                 var reqBuffer = new FlowBuffer(CmdType.GetSeriesById);
                 reqBuffer.AddString(baseName);
                 reqBuffer.AddInt64(seriesId);
-                await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
-                var response = await api.wrap.GetResponse();
+                await api.SendRequest(reqBuffer.GetPackWithPayload());
+                var response = await api.GetResponse();
                 var buffer = new ReadBuffer(response);
                 var seriesT = ExtractSeries(ref buffer);
                 return seriesT;
@@ -96,10 +96,10 @@ namespace TSDBConnector
             reqBuffer.AddByte(series.Looping.Type);
             reqBuffer.AddString(series.Looping.Lt);
 
-            await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+            await api.SendRequest(reqBuffer.GetPackWithPayload());
 
             // TODO:  naming: GetResponseState?
-            await api.wrap.CheckResponseState();
+            await api.CheckResponseState();
         }
 
         public static async Task RemoveSeries(this TsdbClient api, string baseName, long seriesId)
@@ -109,10 +109,10 @@ namespace TSDBConnector
             // TODO: fix error in ldb connector, it requires seriesName
             reqBuffer.AddInt64(seriesId);
 
-            await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+            await api.SendRequest(reqBuffer.GetPackWithPayload());
 
             // TODO: rework naming? GetResponseState?
-            await api.wrap.CheckResponseState();
+            await api.CheckResponseState();
         }
 
         public static async Task UpdateSeries(this TsdbClient api, string baseName, SeriesT seriesUpd)
@@ -127,10 +127,10 @@ namespace TSDBConnector
             reqBuffer.AddByte(seriesUpd.Looping.Type);
             reqBuffer.AddString(seriesUpd.Looping.Lt);
 
-            await api.wrap.SendRequest(reqBuffer.GetPackWithPayload());
+            await api.SendRequest(reqBuffer.GetPackWithPayload());
 
             // TODO:  naming: GetResponseState?
-            await api.wrap.CheckResponseState();
+            await api.CheckResponseState();
         }
 
 
