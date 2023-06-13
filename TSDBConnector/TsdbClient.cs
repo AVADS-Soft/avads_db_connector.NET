@@ -21,6 +21,8 @@ namespace TSDBConnector
         public string SessionKey { get => sessionKey; }
         public int ReconnectAttemptsCount { get => reconnectAttemptsCount; set => reconnectAttemptsCount = value; }
         public int ReconnectAttemptsInterval { get => reconnectAttemptsInterval; set => reconnectAttemptsInterval = value; }
+        public Dictionary<string, long> TryOpenBases = new();
+        public Dictionary<string, long> OpenedBases = new();
         public TsdbClient(TsdbCredentials credentials)
         {
             this.credentials = credentials;
@@ -194,7 +196,20 @@ namespace TSDBConnector
         {
             // TODO: create restore method
             // TODO: move opend bases to client class
-            await Task.Delay(100);
+            var formerState = OpenedBases;
+
+            this.OpenedBases = new Dictionary<string, long>();
+            foreach (KeyValuePair<string, long> entry in formerState)
+            {
+                await this.OpenBase(entry.Key);
+            }
+        }
+
+        public long GetTempBaseId(string baseName)
+        {
+            long id = -1;
+            OpenedBases.TryGetValue(baseName, out id);
+            return id;
         }
 
         public void Dispose()

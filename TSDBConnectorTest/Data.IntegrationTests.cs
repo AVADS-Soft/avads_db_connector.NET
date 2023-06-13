@@ -574,8 +574,125 @@ namespace TSDBConnectorTest
             }
         }
 
+        [TestMethod]
+        public async Task TestAddRows()
+        {
+            var baseName = "TEST_Series";
+            using var client = new TsdbClient(credentials);
+            try
+            {
+                await client.Init();
+                Assert.IsTrue(client.IsConnected);
 
-        //[TestMethod]
+                SeriesT? seriesEx = null;
+                if (await client.GetBase(baseName) == null)
+                {
+                    var tuple = await IntegrationTests.PrepareSeries(client);
+                    baseName = tuple.Item2;
+                    seriesEx = tuple.Item1;
+                }
+                if (seriesEx == null)
+                {
+                    seriesEx = await client.GetSeries(baseName, "zero");
+                }
+
+                if (seriesEx == null) throw new ArgumentNullException();
+
+                await client.OpenBase(baseName);
+                var boundsBefore = await client.DataGetBoundary(baseName, seriesEx.Id);
+
+                var count = 10;
+                // TODO: rename Class property to dataClass for consistentcy
+                var cache = CreateRowsCache(seriesEx.Id, seriesEx.Class, count);
+               
+                await client.DataAddRows(baseName, cache);
+
+                var boundsAfter = await client.DataGetBoundary(baseName, seriesEx.Id);
+                Assert.IsNotNull(boundsAfter);
+                Assert.AreEqual(boundsBefore?.RowCount ?? 0, boundsAfter.RowCount - count);
+
+
+            }
+            catch (Exception e)
+            {
+                throw new AssertFailedException(e.Message, e);
+            }
+            finally
+            {
+                await client.CloseBase(baseName);
+            }
+        }
+
+        [TestMethod]
+        public async Task TestAddRowsCache()
+        {
+            var baseName = "TEST_Series";
+            using var client = new TsdbClient(credentials);
+            try
+            {
+                await client.Init();
+                Assert.IsTrue(client.IsConnected);
+
+                SeriesT? seriesEx = null;
+                if (await client.GetBase(baseName) == null)
+                {
+                    var tuple = await IntegrationTests.PrepareSeries(client);
+                    baseName = tuple.Item2;
+                    seriesEx = tuple.Item1;
+                }
+                if (seriesEx == null)
+                {
+                    seriesEx = await client.GetSeries(baseName, "zero");
+                }
+
+                if (seriesEx == null) throw new ArgumentNullException();
+
+                await client.OpenBase(baseName);
+                var boundsBefore = await client.DataGetBoundary(baseName, seriesEx.Id);
+
+                var count = 10;
+                // TODO: rename Class property to dataClass for consistentcy
+                var cache = CreateRowsCache(seriesEx.Id, seriesEx.Class, count);
+               
+                var cacheCount = await client.DataAddRowsCache(baseName, cache);
+
+                Assert.AreEqual(cacheCount, count);
+
+                var boundsAfter = await client.DataGetBoundary(baseName, seriesEx.Id);
+                Assert.IsNotNull(boundsAfter);
+                Assert.AreEqual(boundsBefore?.RowCount ?? 0, boundsAfter.RowCount - count);
+
+
+            }
+            catch (Exception e)
+            {
+                throw new AssertFailedException(e.Message, e);
+            }
+            finally
+            {
+                await client.CloseBase(baseName);
+            }
+        }
+
+        private RowsCacheT CreateRowsCache(long seriesId, byte dataClass, int count)
+        {
+            var cache = new RowsCacheT();
+            var reqTime = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+            var now = reqTime;
+            var value = 0;
+            uint quality = 0;
+            for (int i = 0; i < count; i++)
+            {
+                cache.AddRec(seriesId, dataClass, reqTime, quality, value);
+                reqTime += 100000000;
+                value += 100;
+                quality += 10;
+            }
+            return cache;
+        }
+
+
+        [TestMethod]
         public async Task TestGeneration()
         {
             var baseName = "TEST_Series";

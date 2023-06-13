@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using FlowBufferEnvironment;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TSDBConnector;
 
@@ -282,7 +283,7 @@ namespace TSDBConnectorTest
                 var series = await client.GetSeries(baseEx.Name, seriesName);
                 if (series == null)
                 {
-                    var newSeries = new SeriesT(seriesName, 12, 1);
+                    var newSeries = new SeriesT(seriesName, 12, (long)MecTypes.LINT);
                     await client.AddSeries(baseEx.Name, newSeries);
                     series = await client.GetSeries(baseEx.Name, seriesName);
                 }

@@ -7,10 +7,6 @@ namespace TSDBConnector
 {
     public static class TsdbBaseExtension
     {
-        public static Dictionary<string, long> TryOpenBases = new();
-
-        public static Dictionary<string, long> OpenedBases = new();
-
         public static async Task<List<BaseT>> GetBasesList(this TsdbClient api)
         {
             var reqPack = new FlowBuffer(CmdType.BaseGetList).GetCmdPack();
@@ -98,17 +94,17 @@ namespace TSDBConnector
 
             await api.Fetch(reqPack, ResponseType.State);
 
-            if (OpenedBases.TryGetValue(baseName, out long id))
+            if (api.OpenedBases.TryGetValue(baseName, out long id))
             {
-                OpenedBases.Remove(baseName);
-                OpenedBases.Add(upd.Name, id);
+                api.OpenedBases.Remove(baseName);
+                api.OpenedBases.Add(upd.Name, id);
             }
         }
 
         public static async Task OpenBase(this TsdbClient api, string baseName)
         {
             long id;
-            if (TryOpenBases.TryGetValue(baseName, out id) || OpenedBases.TryGetValue(baseName, out id))
+            if (api.TryOpenBases.TryGetValue(baseName, out id) || api.OpenedBases.TryGetValue(baseName, out id))
             {
                 return;
             }
@@ -116,32 +112,27 @@ namespace TSDBConnector
 
             // TODO: sure that id is unique 
             id = random.Next();
-            TryOpenBases.Add(baseName, id);
+            api.TryOpenBases.Add(baseName, id);
 
             var reqPack = new FlowBuffer(CmdType.BaseOpen).AddInt64(id).AddString(baseName).GetPayloadPack();
 
             await api.Fetch(reqPack, ResponseType.State);
 
-            TryOpenBases.Remove(baseName);
-            OpenedBases.Add(baseName, id);
+            api.TryOpenBases.Remove(baseName);
+            api.OpenedBases.Add(baseName, id);
         }
 
         public static async Task CloseBase(this TsdbClient api, string baseName)
         {
-            if (OpenedBases.TryGetValue(baseName, out long id))
+            if (api.OpenedBases.TryGetValue(baseName, out long id))
             {
                 var reqPack = new FlowBuffer(CmdType.BaseClose).AddInt64(id).GetPayloadPack();
                 await api.Fetch(reqPack, ResponseType.State);
-                OpenedBases.Remove(baseName);
+                api.OpenedBases.Remove(baseName);
             }
         }
 
-        public static long GetTempBaseId(this TsdbClient api, string baseName)
-        {
-            long id = -1;
-            OpenedBases.TryGetValue(baseName, out id);
-            return id;
-        }
+
 
         private static BaseT ExtractBase(ref ReadBuffer buffer)
         {
