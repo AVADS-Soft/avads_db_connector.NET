@@ -20,6 +20,23 @@ namespace TSDBConnector
             buffer.AddInt32((Int32)quality);
             return buffer;
         }
+        public static RowT GetRec(this ReadBuffer buffer, byte dataClass)
+        {
+            var value = new byte[0];
+            var time = buffer.GetInt64();
+            if (dataClass == 0)
+            {
+                value = buffer.GetBytes(8);
+            }
+            else if (dataClass == 1)
+            {
+                value = buffer.GetBlob();
+            }
+            var q = buffer.GetBytes(4);
+            var rec = new RowT(time, value, q);
+            return rec;
+        }
+
         public static async Task DataAddRows(this TsdbClient api, string baseName, RowsCacheT rows)
         {
             var baseId = api.GetTempBaseId(baseName);
@@ -54,7 +71,6 @@ namespace TSDBConnector
             return 0;
         }
 
-        // TODO: create override method 'add row' with rec as argument
         // TODO: create enum for dataClass
         public static async Task DataAddRow(this TsdbClient api, string baseName, long seriesId, byte dataClass, long time, UInt32 quality, object value)
         {
@@ -85,21 +101,8 @@ namespace TSDBConnector
                     .GetPayloadPack();
 
                 var readBuffer = await api.Fetch(reqPack);
-                var time = readBuffer.GetInt64();
-                byte[] value = new byte[0];
-                if (dataClass == 0)
-                {
-                    value = readBuffer.GetBytes(8);
-                }
-                else if (dataClass == 1)
-                {
-                    // TODO: mb create method inserting bytes with length
-                    var tempStr = readBuffer.GetString();
-                    value = ByteConverter.StringToBytes(tempStr);
-                }
-
-                var q = readBuffer.GetBytes(4);
-                return new RowT(time, value, q);
+                var rec = readBuffer.GetRec(dataClass);
+                return rec;
             }
             return null;
         }
@@ -117,21 +120,8 @@ namespace TSDBConnector
                     .GetPayloadPack();
 
                 var readBuffer = await api.Fetch(reqPack);
-                var time = readBuffer.GetInt64();
-                byte[] value = new byte[0];
-                if (dataClass == 0)
-                {
-                    value = readBuffer.GetBytes(8);
-                }
-                else if (dataClass == 1)
-                {
-                    // TODO: mb create method inserting bytes with length
-                    var tempStr = readBuffer.GetString();
-                    value = ByteConverter.StringToBytes(tempStr);
-                }
-
-                var q = readBuffer.GetBytes(4);
-                return new RowT(time, value, q);
+                var rec = readBuffer.GetRec(dataClass);
+                return rec;
             }
             return null;
         }
@@ -157,7 +147,7 @@ namespace TSDBConnector
         }
         
         // TODO: add direction enum (tomax = 1, tomin = 2)
-        public static async Task<RecsWithCP?> DataGetRange(this TsdbClient api, string baseName, long seriesId, byte direct, long limit, long min, long max, short dpi)
+        public static async Task<RecsWithCP?> DataGetRange(this TsdbClient api, string baseName, long seriesId, byte dataClass, byte direct, long limit, long min, long max, short dpi)
         {
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
@@ -174,13 +164,13 @@ namespace TSDBConnector
                     .GetPayloadPack();
 
                 var readBuffer = await api.Fetch(reqPack);
-                var result = ExtractRecs(readBuffer);
+                var result = ExtractRecs(readBuffer, dataClass);
                 return result;
             }
             return null;
         }
         
-        public static async Task<RecsWithCP?> DataGetFromCP(this TsdbClient api, string baseName, string cp, byte direct, long limit)
+        public static async Task<RecsWithCP?> DataGetFromCP(this TsdbClient api, string baseName, byte dataClass, string cp, byte direct, long limit)
         {
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
@@ -194,14 +184,14 @@ namespace TSDBConnector
                     .GetPayloadPack();
 
                 var readBuffer = await api.Fetch(reqPack);
-                var result = ExtractRecs(readBuffer);
+                var result = ExtractRecs(readBuffer, dataClass);
                 return result;
             }
             return null;
         }
 
         // TODO: create arguments default values
-        public static async Task<RecsWithCP?> DataGetRangeFromCP(this TsdbClient api, string baseName, string cp, byte direct, long limit, long min, long max, short dpi)
+        public static async Task<RecsWithCP?> DataGetRangeFromCP(this TsdbClient api, string baseName, byte dataClass, string cp, byte direct, long limit, long min, long max, short dpi)
         {
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
@@ -218,9 +208,8 @@ namespace TSDBConnector
                     .GetPayloadPack();
 
                 var readBuffer = await api.Fetch(reqPack);
-                var result = ExtractRecs(readBuffer);
+                var result = ExtractRecs(readBuffer, dataClass);
                 return result;
-
             }
             return null;
         }
@@ -284,7 +273,7 @@ namespace TSDBConnector
             return null;
         }
 
-        private static RecsWithCP ExtractRecs(ReadBuffer readBuffer)
+        private static RecsWithCP ExtractRecs(ReadBuffer readBuffer, byte dataClass)
         {
             var startCp = readBuffer.GetString();
             var endCp = readBuffer.GetString();
@@ -293,13 +282,7 @@ namespace TSDBConnector
             var recs = new RowT[recsCount];
             for (long i = 0; i < recsCount; i++)
             {
-                var time = readBuffer.GetInt64();
-                // TODO: it possible be a blob?
-                var value = readBuffer.GetBytes(8);
-                var q = readBuffer.GetBytes(4);
-
-                var rec = new RowT(time, value, q);
-                recs[i] = rec;
+                recs[i] = readBuffer.GetRec(dataClass);
             }
             var result = new RecsWithCP(recs, startCp, endCp, hasCont);
             return result;

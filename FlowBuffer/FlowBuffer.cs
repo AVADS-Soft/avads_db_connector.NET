@@ -135,35 +135,10 @@ namespace FlowBufferEnvironment
 
         public string GetString()
         {
-            if (buffer.Length < offset + 4)
-            {
-                return string.Empty;
-            }
-            var lenInBytes = new byte[4];
-            Buffer.BlockCopy(buffer, offset, lenInBytes, 0, 4);
-            Int32 strLength = ByteConverter.BytesToInt32(lenInBytes);
-            offset += 4;
+            var strBytes = GetBlob();
+            if (strBytes.Length == 0) return String.Empty;
 
-            if (strLength == 0)
-            {
-                return string.Empty;
-            }
-            if (buffer.Length < offset + strLength)
-            {
-                return string.Empty;
-            }
-            var strInBytes = new byte[strLength];
-            Buffer.BlockCopy(buffer, offset, strInBytes, 0, strLength);
-            offset += strInBytes.Length;
-
-            if (strInBytes.Length == 1 && strInBytes[0] == 0)
-            {
-                return string.Empty;
-            }
-
-            var str = ByteConverter.BytesToString(strInBytes);
-
-            return str;
+            return ByteConverter.BytesToString(strBytes);
         }
 
         public Int64 GetInt64()
@@ -212,6 +187,38 @@ namespace FlowBufferEnvironment
             Buffer.BlockCopy(buffer, offset, bytes, 0, length);
             offset += length;
             return bytes;
+        }
+
+        public byte[] GetBlob()
+        {
+            var empty = new byte[0];
+            if (buffer.Length < offset + 4)
+            {
+                return empty;
+            }
+            var lenInBytes = new byte[4];
+            Buffer.BlockCopy(buffer, offset, lenInBytes, 0, 4);
+            Int32 strLength = ByteConverter.BytesToInt32(lenInBytes);
+            offset += 4;
+
+            if (strLength == 0)
+            {
+                return empty;
+            }
+            if (buffer.Length < offset + strLength)
+            {
+                return empty;
+            }
+            var blob = new byte[strLength];
+            Buffer.BlockCopy(buffer, offset, blob, 0, strLength);
+            offset += blob.Length;
+
+            if (blob.Length == 1 && blob[0] == 0)
+            {
+                return empty;
+            }
+
+            return blob;
         }
 
         public bool GetBool()

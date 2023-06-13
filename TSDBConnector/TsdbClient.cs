@@ -75,7 +75,7 @@ namespace TSDBConnector
         private async Task<long> GetVersion()
         {
             var pack = new FlowBuffer(ProtocolCmd.GetProtocolVersion).GetCmdPack();
-            var buff = await Fetch(pack, ResponseType.State);
+            var buff = await Fetch(pack);
             var vers = (long)buff.GetByte();
             return vers;
         }

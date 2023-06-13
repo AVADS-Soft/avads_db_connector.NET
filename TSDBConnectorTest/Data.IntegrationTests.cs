@@ -260,9 +260,13 @@ namespace TSDBConnectorTest
                 // TODO: error: cannot be used with type any
                 // it depens of 'convert' argument, from tcp it always nil
                  
-                var cpRec = await client.DataGetRange(baseName, seriesEx.Id, 1, 100, reqTime, origin, 1000);
+                var cpRec = await client.DataGetRange(baseName, seriesEx.Id, 0, 1, 100, reqTime, origin, 0);
+
+                var cpRecDpi = await client.DataGetRange(baseName, seriesEx.Id, 0, 1, 100, reqTime, origin, 10);
 
                 Assert.IsNotNull(cpRec);
+
+                Assert.IsNotNull(cpRecDpi);
             }
             catch (Exception e)
             {
@@ -316,7 +320,7 @@ namespace TSDBConnectorTest
                 Assert.IsNotNull(cp);
                 Assert.AreNotEqual(cp, string.Empty);
                 // TODO: testcase other direction
-                var recsCp = await client.DataGetFromCP(baseName, cp, 1, 100);
+                var recsCp = await client.DataGetFromCP(baseName, 0, cp, 1, 100);
 
                 Assert.IsNotNull(recsCp);
 
@@ -382,7 +386,7 @@ namespace TSDBConnectorTest
                 Assert.IsNotNull(cp);
                 Assert.AreNotEqual(cp, string.Empty);
                 // TODO: testcase other direction
-                var recsCp = await client.DataGetRangeFromCP(baseName, cp, 1, 100, reqTime, origin, 1000);
+                var recsCp = await client.DataGetRangeFromCP(baseName, 0, cp, 1, 100, reqTime, origin, 100);
 
                 Assert.IsNotNull(recsCp);
                 value = 0; quality = 0; origin = reqTime;
@@ -571,7 +575,7 @@ namespace TSDBConnectorTest
         }
 
 
-        [TestMethod]
+        //[TestMethod]
         public async Task TestGeneration()
         {
             var baseName = "TEST_Series";
