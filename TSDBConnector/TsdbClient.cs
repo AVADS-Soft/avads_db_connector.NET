@@ -36,9 +36,9 @@ namespace TSDBConnector
 
         private async Task Login(string login, string password)
         {
-            var flow = new FlowBuffer(ProtocolCmd.LoginGetKeys).AddString(login);
+            var keysPack = new FlowBuffer(ProtocolCmd.LoginGetKeys).AddString(login).GetCmdPack();
 
-            var resp = await Fetch(flow.GetCmdPack());
+            var resp = await Fetch(keysPack);
 
             Tuple<string, string> info = SplitLoginInfo(resp.GetBuffer());
             string hash = GetAuthHash(info, login, password);
@@ -110,17 +110,7 @@ namespace TSDBConnector
             }
         }
 
-        /*private async Task CheckResponseState()
-        {
-            var state = await wrap.ReadBytesAsync(1);
-            if (state[0] != 0)
-            {
-                var err = await wrap.ReadError();
-                throw new TsdbCustomError(err);
-            }
-        }*/
-
-        public async Task<ReadBuffer> Fetch(byte[] request, ResponseType type = 0)
+        public async Task<ReadBuffer> Fetch(byte[] request, ResponseType type = ResponseType.Payload)
         {
             try
             {
@@ -128,7 +118,7 @@ namespace TSDBConnector
                 var state = await wrap.ReadBytesAsync(1);
                 if (state != null && state[0] == 0)
                 {
-                    if (type == 0)
+                    if (type == ResponseType.Payload)
                     { 
                         var response = await wrap.ReadAnswerBytes();
                         return new ReadBuffer(response);
@@ -167,7 +157,7 @@ namespace TSDBConnector
             if (String.IsNullOrEmpty(sessionKey)) throw new Exception("Unable to reconnect without session key");            
             
             var inReconnectAttempt = true;
-            var restorePack = new FlowBuffer(ProtocolCmd.RestoreSession).AddString(sessionKey);
+            var restorePack = new FlowBuffer(ProtocolCmd.RestoreSession).AddString(sessionKey).GetPayloadPack();
             while (inReconnectAttempt)
             {
                 try
@@ -179,7 +169,7 @@ namespace TSDBConnector
                     currentAttempt ++;
 
                     await wrap.InitConnection(credentials.ip, credentials.port);
-                    await wrap.WriteBytesAsync(restorePack.GetPayloadPack());
+                    await wrap.WriteBytesAsync(restorePack);
 
                     inReconnectAttempt = false;                    
                 }
@@ -222,7 +212,6 @@ public struct TsdbCredentials
     public int port;
     public string login;
     public string password;
-
     public TsdbCredentials(string ip, int port, string login, string password)
     {
         this.ip = ip;

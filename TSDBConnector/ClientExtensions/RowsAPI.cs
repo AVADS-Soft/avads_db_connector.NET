@@ -4,12 +4,9 @@ namespace TSDBConnector
 {
     public static class TsdbRowsExtension
     {
-        public static void AddRec(this FlowBuffer buffer, long seriesId, byte dataClass, long time, UInt32 quality, object value)
+        public static FlowBuffer AddRec(this FlowBuffer buffer, long seriesId, byte dataClass, long time, UInt32 quality, object value)
         {
-            buffer.AddInt64(seriesId);
-            buffer.AddByte(dataClass);
-            buffer.AddInt64(time);
-
+            buffer.AddInt64(seriesId).AddByte(dataClass).AddInt64(time);
             if (dataClass == 0)
             {
                 byte[] bytes = ByteConverter.AtomicToBytes(value);
@@ -18,24 +15,23 @@ namespace TSDBConnector
             else if (dataClass == 1)
             {
                 byte[] bytes = ByteConverter.BlobToBytes(value);
-                buffer.AddInt32(bytes.Length);
-                buffer.AddBytes(bytes);
+                buffer.AddInt32(bytes.Length).AddBytes(bytes);
             }
             buffer.AddInt32((Int32)quality);
+            return buffer;
         }
         public static async Task DataAddRows(this TsdbClient api, string baseName, RowsCacheT rows)
         {
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                var reqBuffer = new FlowBuffer(CmdType.DataAddRow);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddBytes(rows.Cache);
+                var reqPack = 
+                    new FlowBuffer(CmdType.DataAddRow)
+                    .AddInt64(baseId)
+                    .AddBytes(rows.Cache)
+                    .GetPayloadPack();
 
-                await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
-
-                //await api.CheckResponseState();
+                await api.Fetch(reqPack, ResponseType.State);
             }
         }
 
@@ -44,25 +40,19 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                var reqBuffer = new FlowBuffer(CmdType.DataAddRowCache);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddBytes(rows.Cache);
+                var reqPack = 
+                    new FlowBuffer(CmdType.DataAddRowCache)
+                    .AddInt64(baseId)
+                    .AddBytes(rows.Cache)
+                    .GetPayloadPack();
 
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
-                //var response = await api.GetResponse();
-
-                var readBuffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                //new ReadBuffer(response);
-
+                var readBuffer = await api.Fetch(reqPack);
                 var count = readBuffer.GetInt64();
-
                 return count;
             }
             // TODO: throw exception everywhere on failed get base
             return 0;
         }
-
-        // TODO: create shorthand adding row data to buffer;
 
         // TODO: create override method 'add row' with rec as argument
         // TODO: create enum for dataClass
@@ -71,16 +61,13 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                var reqBuffer = new FlowBuffer(CmdType.DataAddRow);
-                reqBuffer.AddInt64(baseId);
+                var reqPack = 
+                    new FlowBuffer(CmdType.DataAddRow)
+                    .AddInt64(baseId)
+                    .AddRec(seriesId, dataClass, time, quality, value)
+                    .GetPayloadPack();
 
-                reqBuffer.AddRec(seriesId, dataClass, time, quality, value);
-
-                await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
-
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
-
-                //await api.CheckResponseState();
+                await api.Fetch(reqPack, ResponseType.State);
             }
             else throw new Exception("no available bases, possibly base is not opened");
         }
@@ -91,17 +78,13 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                var reqBuffer = new FlowBuffer(CmdType.DataGetLastValue);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddInt64(seriesId);
+                var reqPack = 
+                    new FlowBuffer(CmdType.DataGetLastValue)
+                    .AddInt64(baseId)
+                    .AddInt64(seriesId)
+                    .GetPayloadPack();
 
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
-
-                //var response = await api.GetResponse();
-
-                var readBuffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                // new ReadBuffer(response);
-
+                var readBuffer = await api.Fetch(reqPack);
                 var time = readBuffer.GetInt64();
                 byte[] value = new byte[0];
                 if (dataClass == 0)
@@ -126,20 +109,15 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                var reqBuffer = new FlowBuffer(CmdType.DataGetValueAtTime);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddInt64(seriesId);
-                reqBuffer.AddInt64(t);
+                var reqPack = 
+                    new FlowBuffer(CmdType.DataGetValueAtTime)
+                    .AddInt64(baseId)
+                    .AddInt64(seriesId)
+                    .AddInt64(t)
+                    .GetPayloadPack();
 
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
-
-                //var response = await api.GetResponse();
-
-                // TODO: create method, remove duplicate
-                var readBuffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                //new ReadBuffer(response);
+                var readBuffer = await api.Fetch(reqPack);
                 var time = readBuffer.GetInt64();
-
                 byte[] value = new byte[0];
                 if (dataClass == 0)
                 {
@@ -163,19 +141,15 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                // TODO: remove dupl, send with t request?
-                var reqBuffer = new FlowBuffer(CmdType.DataGetCP);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddInt64(seriesId);
-                reqBuffer.AddInt64(t);
 
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
+                var reqPack = 
+                    new FlowBuffer(CmdType.DataGetCP)
+                    .AddInt64(baseId)
+                    .AddInt64(seriesId)
+                    .AddInt64(t)
+                    .GetPayloadPack();
 
-               // var response = await api.GetResponse();
-
-                var readBuffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                //new ReadBuffer(response);
-
+                var readBuffer = await api.Fetch(reqPack);
                 var result = readBuffer.GetString();
                 return result;
             }
@@ -188,39 +162,19 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                var reqBuffer = new FlowBuffer(CmdType.DateGetRangeDirection);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddInt64(seriesId);
-                reqBuffer.AddByte(direct);
-                reqBuffer.AddInt64(limit);
-                reqBuffer.AddInt64(min);
-                reqBuffer.AddInt64(max);
-                reqBuffer.AddInt16(dpi);
-                
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
+                var reqPack = 
+                    new FlowBuffer(CmdType.DateGetRangeDirection)
+                    .AddInt64(baseId)
+                    .AddInt64(seriesId)
+                    .AddByte(direct)
+                    .AddInt64(limit)
+                    .AddInt64(min)
+                    .AddInt64(max)
+                    .AddInt16(dpi)
+                    .GetPayloadPack();
 
-                //var response = await api.GetResponse();
-
-                var readBuffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                // new ReadBuffer(response);
-
-                var startCp = readBuffer.GetString();
-                var endCp = readBuffer.GetString();
-                var hasCont = readBuffer.GetBool();
-
-                var recsCount = readBuffer.GetInt64();
-                var recs = new RowT[recsCount];
-                for (long i = 0; i < recsCount; i++)
-                {
-                    var time = readBuffer.GetInt64();
-                    // TODO: it possible be a blob?
-                    var value = readBuffer.GetBytes(8);
-                    var q = readBuffer.GetBytes(4);
-
-                    var rec = new RowT(time, value, q);
-                    recs[i] = rec;
-                }
-                var result = new RecsWithCP(recs, startCp, endCp, hasCont);
+                var readBuffer = await api.Fetch(reqPack);
+                var result = ExtractRecs(readBuffer);
                 return result;
             }
             return null;
@@ -231,38 +185,17 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                var reqBuffer = new FlowBuffer(CmdType.DataGetFromCP);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddString(cp);
-                reqBuffer.AddByte(direct);
-                reqBuffer.AddInt64(limit);
-                
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
+                var reqPack = 
+                    new FlowBuffer(CmdType.DataGetFromCP)
+                    .AddInt64(baseId)
+                    .AddString(cp)
+                    .AddByte(direct)
+                    .AddInt64(limit)
+                    .GetPayloadPack();
 
-                //var response = await api.GetResponse();
-
-                var readBuffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                //new ReadBuffer(response);
-                // TODO: get recWith cp shorthand method, remove duplicate
-                var startCp = readBuffer.GetString();
-                var endCp = readBuffer.GetString();
-                var hasCont = readBuffer.GetBool();
-
-                var recsCount = readBuffer.GetInt64();
-                var recs = new RowT[recsCount];
-                for (long i = 0; i < recsCount; i++)
-                {
-                    var time = readBuffer.GetInt64();
-                    // TODO: it possible be a blob?
-                    var value = readBuffer.GetBytes(8);
-                    var q = readBuffer.GetBytes(4);
-
-                    var rec = new RowT(time, value, q);
-                    recs[i] = rec;
-                }
-                var result = new RecsWithCP(recs, startCp, endCp, hasCont);
+                var readBuffer = await api.Fetch(reqPack);
+                var result = ExtractRecs(readBuffer);
                 return result;
-
             }
             return null;
         }
@@ -273,44 +206,23 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                var reqBuffer = new FlowBuffer(CmdType.DateGetRangeFromCP);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddString(cp);
-                reqBuffer.AddByte(direct);
-                reqBuffer.AddInt64(limit);
-                reqBuffer.AddInt64(min);
-                reqBuffer.AddInt64(max);
-                reqBuffer.AddInt16(dpi);
-                
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
+                var reqPack = 
+                    new FlowBuffer(CmdType.DateGetRangeFromCP)
+                    .AddInt64(baseId)
+                    .AddString(cp)
+                    .AddByte(direct)
+                    .AddInt64(limit)
+                    .AddInt64(min)
+                    .AddInt64(max)
+                    .AddInt16(dpi)
+                    .GetPayloadPack();
 
-                //var response = await api.GetResponse();
-
-                var readBuffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                //new ReadBuffer(response);
-                // TODO: get recWith cp shorthand method, remove duplicate
-                var startCp = readBuffer.GetString();
-                var endCp = readBuffer.GetString();
-                var hasCont = readBuffer.GetBool();
-
-                var recsCount = readBuffer.GetInt64();
-                var recs = new RowT[recsCount];
-                for (long i = 0; i < recsCount; i++)
-                {
-                    var time = readBuffer.GetInt64();
-                    // TODO: it possible be a blob?
-                    var value = readBuffer.GetBytes(8);
-                    var q = readBuffer.GetBytes(4);
-
-                    var rec = new RowT(time, value, q);
-                    recs[i] = rec;
-                }
-                var result = new RecsWithCP(recs, startCp, endCp, hasCont);
+                var readBuffer = await api.Fetch(reqPack);
+                var result = ExtractRecs(readBuffer);
                 return result;
 
             }
             return null;
-            
         }
         
         public static async Task DataDeleteRow(this TsdbClient api, string baseName, long seriesId, long t)
@@ -318,16 +230,14 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                // TODO: remove dupl, send with t request?
-                var reqBuffer = new FlowBuffer(CmdType.DataDeleteRow);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddInt64(seriesId);
-                reqBuffer.AddInt64(t);
+                var reqPack = 
+                    new FlowBuffer(CmdType.DataDeleteRow)
+                    .AddInt64(baseId)
+                    .AddInt64(seriesId)
+                    .AddInt64(t)
+                    .GetPayloadPack();
 
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
-
-                //await api.CheckResponseState();
-                await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
+                await api.Fetch(reqPack, ResponseType.State);
             }
         }
         
@@ -336,19 +246,15 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                // TODO: remove dupl, send with t request?
-                var reqBuffer = new FlowBuffer(CmdType.DataDeleteRows);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddInt64(seriesId);
-                reqBuffer.AddInt64(timeStart);
-                reqBuffer.AddInt64(timeEnd);
+                var reqBuffer = 
+                    new FlowBuffer(CmdType.DataDeleteRows)
+                    .AddInt64(baseId)
+                    .AddInt64(seriesId)
+                    .AddInt64(timeStart)
+                    .AddInt64(timeEnd)
+                    .GetPayloadPack();
 
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
-
-                //var response = await api.GetResponse();
-
-                var readBuffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                //new ReadBuffer(response);
+                var readBuffer = await api.Fetch(reqBuffer);
                 var count = readBuffer.GetInt64();
                 return count;
             }
@@ -360,17 +266,13 @@ namespace TSDBConnector
             var baseId = api.GetTempBaseId(baseName);
             if (baseId != -1)
             {
-                // TODO: remove dupl, send with t request?
-                var reqBuffer = new FlowBuffer(CmdType.DataGetBoundary);
-                reqBuffer.AddInt64(baseId);
-                reqBuffer.AddInt64(seriesId);
-                // TODO: refactor GETPACK, compute according buffer entries
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
+                var reqBuffer = 
+                    new FlowBuffer(CmdType.DataGetBoundary)
+                    .AddInt64(baseId)
+                    .AddInt64(seriesId)
+                    .GetPayloadPack();
 
-                //var response = await api.GetResponse();
-
-                var readBuffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                //new ReadBuffer(response);
+                var readBuffer = await api.Fetch(reqBuffer);
                 var min = readBuffer.GetInt64();
                 var max = readBuffer.GetInt64();
                 var count = readBuffer.GetInt64();
@@ -380,6 +282,27 @@ namespace TSDBConnector
                 return new BoundaryT(min, max, count, startCp, endCp);
             }
             return null;
+        }
+
+        private static RecsWithCP ExtractRecs(ReadBuffer readBuffer)
+        {
+            var startCp = readBuffer.GetString();
+            var endCp = readBuffer.GetString();
+            var hasCont = readBuffer.GetBool();
+            var recsCount = readBuffer.GetInt64();
+            var recs = new RowT[recsCount];
+            for (long i = 0; i < recsCount; i++)
+            {
+                var time = readBuffer.GetInt64();
+                // TODO: it possible be a blob?
+                var value = readBuffer.GetBytes(8);
+                var q = readBuffer.GetBytes(4);
+
+                var rec = new RowT(time, value, q);
+                recs[i] = rec;
+            }
+            var result = new RecsWithCP(recs, startCp, endCp, hasCont);
+            return result;
         }
     }
 }

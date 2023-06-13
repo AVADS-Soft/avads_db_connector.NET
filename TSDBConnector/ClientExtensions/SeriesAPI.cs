@@ -9,17 +9,13 @@ namespace TSDBConnector
     {
         public static async Task<List<SeriesT>> GetSeriesList(this TsdbClient api, string baseName)
         {
-            var reqBuffer = new FlowBuffer(CmdType.SeriesGetAll);
-            reqBuffer.AddString(baseName);
+            var reqPack = 
+                new FlowBuffer(CmdType.SeriesGetAll)
+                .AddString(baseName)
+                .GetPayloadPack();
 
-            //await api.SendRequest(reqBuffer.GetPayloadPack());
-
-            //var response = await api.GetResponse();
-
-            var readBuffer = await api.Fetch(reqBuffer.GetPayloadPack());
-            //new ReadBuffer(response);
-            var count = readBuffer.GetInt64();
- 
+            var readBuffer = await api.Fetch(reqPack);
+            var count = readBuffer.GetInt64(); 
             var result = new List<SeriesT>();
             for (int i = 0; i < count; i++)
             {
@@ -41,13 +37,13 @@ namespace TSDBConnector
         {
             try
             {
-                var reqBuffer = new FlowBuffer(CmdType.SeriesGetInfo);
-                reqBuffer.AddString(baseName);
-                reqBuffer.AddString(seriesName);
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
-                //var response = await api.GetResponse();
-                var buffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                //new ReadBuffer(response);
+                var reqPack = 
+                    new FlowBuffer(CmdType.SeriesGetInfo)
+                    .AddString(baseName)
+                    .AddString(seriesName)
+                    .GetPayloadPack();
+
+                var buffer = await api.Fetch(reqPack);
                 var seriesT = ExtractSeries(ref buffer);
                 return seriesT;
             }
@@ -66,13 +62,13 @@ namespace TSDBConnector
         {
             try
             {
-                var reqBuffer = new FlowBuffer(CmdType.GetSeriesById);
-                reqBuffer.AddString(baseName);
-                reqBuffer.AddInt64(seriesId);
-                //await api.SendRequest(reqBuffer.GetPayloadPack());
-                //var response = await api.GetResponse();
-                var buffer = await api.Fetch(reqBuffer.GetPayloadPack());
-                //new ReadBuffer(response);
+                var reqPack = 
+                    new FlowBuffer(CmdType.GetSeriesById)
+                    .AddString(baseName)
+                    .AddInt64(seriesId)
+                    .GetPayloadPack();
+
+                var buffer = await api.Fetch(reqPack);
                 var seriesT = ExtractSeries(ref buffer);
                 return seriesT;
             }
@@ -89,52 +85,47 @@ namespace TSDBConnector
 
         public static async Task AddSeries(this TsdbClient api, string baseName, SeriesT series)
         {
-            var reqBuffer = new FlowBuffer(CmdType.SeriesCreate);
-            reqBuffer.AddString(baseName);
-            reqBuffer.AddInt64(series.Id);
-            reqBuffer.AddString(series.Name);
-            reqBuffer.AddInt64(series.Type);
-            reqBuffer.AddByte((byte)series.ViewTimeMod);
-            reqBuffer.AddString(series.Comment);
-            reqBuffer.AddByte(series.Looping.Type);
-            reqBuffer.AddString(series.Looping.Lt);
+            var reqPack = 
+                new FlowBuffer(CmdType.SeriesCreate)
+                .AddString(baseName)
+                .AddInt64(series.Id)
+                .AddString(series.Name)
+                .AddInt64(series.Type)
+                .AddByte((byte)series.ViewTimeMod)
+                .AddString(series.Comment)
+                .AddByte(series.Looping.Type)
+                .AddString(series.Looping.Lt)
+                .GetPayloadPack();
 
-            await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
-
-            //await api.SendRequest(reqBuffer.GetPayloadPack());
-
-            // await api.CheckResponseState();
+            await api.Fetch(reqPack, ResponseType.State);
         }
 
         public static async Task RemoveSeries(this TsdbClient api, string baseName, long seriesId)
         {
-            var reqBuffer = new FlowBuffer(CmdType.SeriesRemove);
-            reqBuffer.AddString(baseName);
-            // TODO: fix error in ldb connector, it requires seriesName
-            reqBuffer.AddInt64(seriesId);
+            var reqPack = 
+                new FlowBuffer(CmdType.SeriesRemove)
+                .AddString(baseName)
+                .AddInt64(seriesId)
+                .GetPayloadPack();
 
-            await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
-
-            //await api.SendRequest(reqBuffer.GetPayloadPack());
-            //await api.CheckResponseState();
+            await api.Fetch(reqPack, ResponseType.State);
         }
 
         public static async Task UpdateSeries(this TsdbClient api, string baseName, SeriesT seriesUpd)
         {
-            var reqBuffer = new FlowBuffer(CmdType.SeriesUpdate);
-            reqBuffer.AddString(baseName);
-            reqBuffer.AddInt64(seriesUpd.Id);
-            reqBuffer.AddString(seriesUpd.Name);
-            reqBuffer.AddInt64(seriesUpd.Type);
-            reqBuffer.AddByte((byte)seriesUpd.ViewTimeMod);
-            reqBuffer.AddString(seriesUpd.Comment);
-            reqBuffer.AddByte(seriesUpd.Looping.Type);
-            reqBuffer.AddString(seriesUpd.Looping.Lt);
+            var reqBuffer = 
+                new FlowBuffer(CmdType.SeriesUpdate)
+                .AddString(baseName)
+                .AddInt64(seriesUpd.Id)
+                .AddString(seriesUpd.Name)
+                .AddInt64(seriesUpd.Type)
+                .AddByte((byte)seriesUpd.ViewTimeMod)
+                .AddString(seriesUpd.Comment)
+                .AddByte(seriesUpd.Looping.Type)
+                .AddString(seriesUpd.Looping.Lt)
+                .GetPayloadPack();
 
-            await api.Fetch(reqBuffer.GetPayloadPack(), ResponseType.State);
-
-            //await api.SendRequest(reqBuffer.GetPayloadPack());
-            //await api.CheckResponseState();
+            await api.Fetch(reqBuffer, ResponseType.State);
         }
 
 
