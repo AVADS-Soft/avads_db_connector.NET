@@ -1,5 +1,3 @@
-using System;
-
 namespace TSDBConnector
 {
     public class BaseT
@@ -42,6 +40,21 @@ namespace TSDBConnector
             this.autoSaveDuration = autoSaveDuration;
             this.autoSaveInterval = autoSaveInterval;
             this.status = status;
+        }
+
+        public BaseT(BaseT actual)
+        {
+            this.name = actual.name;
+            this.path = actual.path;
+            this.dbSize = actual.dbSize;
+            this.comment = actual.comment;
+            this.fsType = actual.fsType == "" ? FsTypes.FS_MULTIPART : actual.fsType;
+            if (loop == null) this.loop = new LoopingT();
+            this.autoAddSeries = actual.autoAddSeries;
+            this.autoSave = actual.autoSave;
+            this.autoSaveDuration = actual.autoSaveDuration;
+            this.autoSaveInterval = actual.autoSaveInterval;
+            this.status = actual.status;
         }
 
         public string Name  { get { return name; } }

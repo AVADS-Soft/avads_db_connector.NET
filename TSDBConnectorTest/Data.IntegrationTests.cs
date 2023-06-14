@@ -39,7 +39,7 @@ namespace TSDBConnectorTest
                 await client.OpenBase(baseName);
 
                 var nanosec = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
-                await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, nanosec, 0, 16);
+                await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, nanosec, 0, 16);
 
             }
             catch (Exception e)
@@ -83,9 +83,9 @@ namespace TSDBConnectorTest
                 var value = 123123;
                 uint quality = 252;
 
-                await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, now, quality, value);
+                await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, now, quality, value);
 
-                var lastValue = await client.DataGetLastValue(baseName, seriesEx.Id, seriesEx.Class);
+                var lastValue = await client.DataGetLastValue(baseName, seriesEx.Id, seriesEx.DataClass);
 
                 if (lastValue == null) throw new ArgumentNullException();
 
@@ -139,7 +139,7 @@ namespace TSDBConnectorTest
 
                 for (int i = 0; i < 5; i ++)
                 {
-                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, origin, quality, value);
+                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, origin, quality, value);
                     origin += 100000000;
                     value += 100;
                     quality += 10;
@@ -148,7 +148,7 @@ namespace TSDBConnectorTest
                 // TODO: testcase if base is not open
                 // TODO: testcase if no data
                 // TODO: testcase if response time mark is unequal with requested, should be a nearest point
-                var atTime = await client.DataGetValueAtTime(baseName, seriesEx.Id, seriesEx.Class, reqTime);
+                var atTime = await client.DataGetValueAtTime(baseName, seriesEx.Id, seriesEx.DataClass, reqTime);
 
                 if (atTime == null) throw new ArgumentNullException();
 
@@ -199,7 +199,7 @@ namespace TSDBConnectorTest
                 var value = 0;
                 uint quality = 0;
 
-                await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, now, quality, value);
+                await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, now, quality, value);
 
                 var cp = await client.DataGetCP(baseName, seriesEx.Id, now);
 
@@ -250,7 +250,7 @@ namespace TSDBConnectorTest
 
                 for (int i = 0; i < 5; i ++)
                 {
-                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, origin, quality, value);
+                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, origin, quality, value);
                     origin += 100000000;
                     value += 100;
                     quality += 10;
@@ -260,9 +260,9 @@ namespace TSDBConnectorTest
                 // TODO: error: cannot be used with type any
                 // it depens of 'convert' argument, from tcp it always nil
                  
-                var cpRec = await client.DataGetRange(baseName, seriesEx.Id, 0, 1, 100, reqTime, origin, 0);
+                var cpRec = await client.DataGetRange(baseName, seriesEx.Id, 0, SeekDirection.ToMax, 100, reqTime, origin, 0);
 
-                var cpRecDpi = await client.DataGetRange(baseName, seriesEx.Id, 0, 1, 100, reqTime, origin, 10);
+                var cpRecDpi = await client.DataGetRange(baseName, seriesEx.Id, 0, SeekDirection.ToMax, 100, reqTime, origin, 10);
 
                 Assert.IsNotNull(cpRec);
 
@@ -311,7 +311,7 @@ namespace TSDBConnectorTest
 
                 for (int i = 0; i < 5; i ++)
                 {
-                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, origin, quality, value);
+                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, origin, quality, value);
                     origin += 100000000;
                     value += 100;
                     quality += 10;
@@ -320,7 +320,7 @@ namespace TSDBConnectorTest
                 Assert.IsNotNull(cp);
                 Assert.AreNotEqual(cp, string.Empty);
                 // TODO: testcase other direction
-                var recsCp = await client.DataGetFromCP(baseName, 0, cp, 1, 100);
+                var recsCp = await client.DataGetFromCP(baseName, 0, cp, SeekDirection.ToMax, 100);
 
                 Assert.IsNotNull(recsCp);
 
@@ -377,7 +377,7 @@ namespace TSDBConnectorTest
 
                 for (int i = 0; i < 5; i ++)
                 {
-                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, origin, quality, value);
+                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, origin, quality, value);
                     origin += 100000000;
                     value += 100;
                     quality += 10;
@@ -386,7 +386,7 @@ namespace TSDBConnectorTest
                 Assert.IsNotNull(cp);
                 Assert.AreNotEqual(cp, string.Empty);
                 // TODO: testcase other direction
-                var recsCp = await client.DataGetRangeFromCP(baseName, 0, cp, 1, 100, reqTime, origin, 100);
+                var recsCp = await client.DataGetRangeFromCP(baseName, 0, cp, SeekDirection.ToMax, 100, reqTime, origin, 100);
 
                 Assert.IsNotNull(recsCp);
                 value = 0; quality = 0; origin = reqTime;
@@ -438,10 +438,10 @@ namespace TSDBConnectorTest
 
                 var now = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
 
-                await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, now - 10000000, 20, 20);
+                await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, now - 10000000, 20, 20);
 
-                await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, now, 10, 10);
-                var atTime = await client.DataGetValueAtTime(baseName, seriesEx.Id, seriesEx.Class, now);
+                await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, now, 10, 10);
+                var atTime = await client.DataGetValueAtTime(baseName, seriesEx.Id, seriesEx.DataClass, now);
 
                 Assert.IsNotNull(atTime);
                 Assert.AreEqual(atTime.T, now);
@@ -450,7 +450,7 @@ namespace TSDBConnectorTest
 
                 await client.DataDeleteRow(baseName, seriesEx.Id, now);
 
-                var afterDel = await client.DataGetValueAtTime(baseName, seriesEx.Id, seriesEx.Class, now);
+                var afterDel = await client.DataGetValueAtTime(baseName, seriesEx.Id, seriesEx.DataClass, now);
 
                 Assert.IsNotNull(afterDel);
                 Assert.AreEqual(afterDel.T, now - 10000000);
@@ -500,7 +500,7 @@ namespace TSDBConnectorTest
                 uint quality = 0;
                 for (int i = 0; i < 5; i ++)
                 {
-                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, now, quality, value);
+                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, now, quality, value);
                     now += 100000000;
                     value += 100;
                     quality += 10;
@@ -508,7 +508,7 @@ namespace TSDBConnectorTest
 
                 await client.DataDeleteRows(baseName, seriesEx.Id, reqTime, now);
 
-                var recAtTime = await client.DataGetValueAtTime(baseName, seriesEx.Id, seriesEx.Class, now);
+                var recAtTime = await client.DataGetValueAtTime(baseName, seriesEx.Id, seriesEx.DataClass, now);
                 if (recAtTime != null)
                 {
                     Assert.AreNotEqual(recAtTime.T, now);
@@ -556,7 +556,7 @@ namespace TSDBConnectorTest
                 uint quality = 0;
                 for (int i = 0; i < 5; i ++)
                 {
-                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, now, quality, value);
+                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, now, quality, value);
                     now += 100000000;
                     value += 100;
                     quality += 10;
@@ -603,7 +603,7 @@ namespace TSDBConnectorTest
 
                 var count = 10;
                 // TODO: rename Class property to dataClass for consistentcy
-                var cache = CreateRowsCache(seriesEx.Id, seriesEx.Class, count);
+                var cache = CreateRowsCache(seriesEx.Id, seriesEx.DataClass, count);
                
                 await client.DataAddRows(baseName, cache);
 
@@ -652,7 +652,7 @@ namespace TSDBConnectorTest
 
                 var count = 10;
                 // TODO: rename Class property to dataClass for consistentcy
-                var cache = CreateRowsCache(seriesEx.Id, seriesEx.Class, count);
+                var cache = CreateRowsCache(seriesEx.Id, seriesEx.DataClass, count);
                
                 var cacheCount = await client.DataAddRowsCache(baseName, cache);
 
@@ -674,7 +674,7 @@ namespace TSDBConnectorTest
             }
         }
 
-        private RowsCacheT CreateRowsCache(long seriesId, byte dataClass, int count)
+        private RowsCacheT CreateRowsCache(long seriesId, DataClass dataClass, int count)
         {
             var cache = new RowsCacheT();
             var reqTime = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
@@ -725,7 +725,7 @@ namespace TSDBConnectorTest
                 {
                     if (value > 100) value = 0;
                     var now = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
-                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.Class, now, quality, value);
+                    await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, now, quality, value);
                     value++;
 
                     await Task.Delay(100);

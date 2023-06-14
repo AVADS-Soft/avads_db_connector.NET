@@ -72,7 +72,7 @@ namespace TSDBConnector
         }
         public byte[] Cache  { get { return buffer.GetBuffer(); } }
 
-        public void AddRec(long seriesId, byte dataClass, long time, UInt32 quality, object value)
+        public void AddRec(long seriesId, DataClass dataClass, long time, UInt32 quality, object value)
         {
             buffer.AddRec(seriesId, dataClass, time, quality, value);
         }

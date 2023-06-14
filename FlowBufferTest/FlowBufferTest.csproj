@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FlowBuffer\FlowBuffer.csproj" />
+    <ProjectReference Include="..\TSDBConnector\TSDBConnector.csproj" />
   </ItemGroup>
 
 </Project>

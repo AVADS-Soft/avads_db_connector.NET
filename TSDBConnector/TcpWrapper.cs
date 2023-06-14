@@ -34,7 +34,7 @@ namespace TSDBConnector
 
         public void CloseConnection()
         {
-            if(stream != null)
+            if (stream != null)
             {
                 stream.Close();
             }
@@ -47,7 +47,7 @@ namespace TSDBConnector
             {
                 throw new Exception("Connection is not inited");
             }
-            while(!stream.DataAvailable)
+            while (!stream.DataAvailable)
             {
                 timeout -= awaitTick;
                 await Task.Delay(awaitTick);
@@ -113,25 +113,4 @@ namespace TSDBConnector
             stream?.Dispose();
         }
     }
-}
-
-
-class TsdbTimeOutException : Exception
-{
-    public TsdbTimeOutException(): base ("Timeout"){}
-}
-
-class TsdbConnectionRefused : Exception
-{
-    public TsdbConnectionRefused(): base ("Connection refused"){}
-}
-
-class TsdbProtocolException : Exception
-{
-    public TsdbProtocolException(string msg): base (msg){}
-}
-
-class TsdbCustomError : Exception
-{
-    public TsdbCustomError(string msg): base (msg){}
 }

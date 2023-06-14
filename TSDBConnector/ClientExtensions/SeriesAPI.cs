@@ -1,56 +1,44 @@
-using System;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using FlowBufferEnvironment;
 
 namespace TSDBConnector
 {
     public static class TsdbSeriesExtension
     {
-        public static async Task<List<SeriesT>> GetSeriesList(this TsdbClient api, string baseName)
+        public static async Task<List<SeriesT>> GetSeriesList(this TsdbClient client, string baseName)
         {
             var reqPack = 
-                new FlowBuffer(CmdType.SeriesGetAll)
+                new FlowBuffer((byte)CmdType.SeriesGetAll)
                 .AddString(baseName)
                 .GetPayloadPack();
 
-            var readBuffer = await api.Fetch(reqPack);
+            var readBuffer = await client.Fetch(reqPack);
             var count = readBuffer.GetInt64(); 
             var result = new List<SeriesT>();
             for (int i = 0; i < count; i++)
             {
-                try
-                {
-                    var serT = ExtractSeries(ref readBuffer);
-                    result.Add(serT);
-                }
-                catch(Exception e)
-                {
-                    Console.WriteLine("buffer extracting error" + e.Message);
-                }
+                var serT = ExtractSeries(ref readBuffer);
+                result.Add(serT);
             }
             return result;
         }
 
-
-        public static async Task<SeriesT?> GetSeries(this TsdbClient api, string baseName, string seriesName)
+        public static async Task<SeriesT?> GetSeries(this TsdbClient client, string baseName, string seriesName)
         {
             try
             {
                 var reqPack = 
-                    new FlowBuffer(CmdType.SeriesGetInfo)
+                    new FlowBuffer((byte)CmdType.SeriesGetInfo)
                     .AddString(baseName)
                     .AddString(seriesName)
                     .GetPayloadPack();
 
-                var buffer = await api.Fetch(reqPack);
+                var buffer = await client.Fetch(reqPack);
                 var seriesT = ExtractSeries(ref buffer);
                 return seriesT;
             }
             catch (Exception e)
             {
-                // TODO: create special Exception, and add err number in base not found exc
-                if (e.Message.StartsWith("#16006"))
+                if (e.Message.StartsWith("#16001") || e.Message.StartsWith("#16002") || e.Message.StartsWith("#16006"))
                 {
                     return null;
                 }
@@ -58,24 +46,23 @@ namespace TSDBConnector
             }
         }
 
-        public static async Task<SeriesT?> GetSeriesById(this TsdbClient api, string baseName, long seriesId)
+        public static async Task<SeriesT?> GetSeriesById(this TsdbClient client, string baseName, long seriesId)
         {
             try
             {
                 var reqPack = 
-                    new FlowBuffer(CmdType.GetSeriesById)
+                    new FlowBuffer((byte)CmdType.GetSeriesById)
                     .AddString(baseName)
                     .AddInt64(seriesId)
                     .GetPayloadPack();
 
-                var buffer = await api.Fetch(reqPack);
+                var buffer = await client.Fetch(reqPack);
                 var seriesT = ExtractSeries(ref buffer);
                 return seriesT;
             }
             catch (Exception e)
             {
-                // TODO: create special Exception, and add err number in base not found exc
-                if (e.Message.StartsWith("#16006"))
+                if (e.Message.StartsWith("#16001") || e.Message.StartsWith("#16002") || e.Message.StartsWith("#16006"))
                 {
                     return null;
                 }
@@ -83,10 +70,10 @@ namespace TSDBConnector
             }
         }
 
-        public static async Task AddSeries(this TsdbClient api, string baseName, SeriesT series)
+        public static async Task AddSeries(this TsdbClient client, string baseName, SeriesT series)
         {
             var reqPack = 
-                new FlowBuffer(CmdType.SeriesCreate)
+                new FlowBuffer((byte)CmdType.SeriesCreate)
                 .AddString(baseName)
                 .AddInt64(series.Id)
                 .AddString(series.Name)
@@ -97,24 +84,24 @@ namespace TSDBConnector
                 .AddString(series.Looping.Lt)
                 .GetPayloadPack();
 
-            await api.Fetch(reqPack, ResponseType.State);
+            await client.Fetch(reqPack, ResponseType.State);
         }
 
-        public static async Task RemoveSeries(this TsdbClient api, string baseName, long seriesId)
+        public static async Task RemoveSeries(this TsdbClient client, string baseName, long seriesId)
         {
             var reqPack = 
-                new FlowBuffer(CmdType.SeriesRemove)
+                new FlowBuffer((byte)CmdType.SeriesRemove)
                 .AddString(baseName)
                 .AddInt64(seriesId)
                 .GetPayloadPack();
 
-            await api.Fetch(reqPack, ResponseType.State);
+            await client.Fetch(reqPack, ResponseType.State);
         }
 
-        public static async Task UpdateSeries(this TsdbClient api, string baseName, SeriesT seriesUpd)
+        public static async Task UpdateSeries(this TsdbClient client, string baseName, SeriesT seriesUpd)
         {
             var reqBuffer = 
-                new FlowBuffer(CmdType.SeriesUpdate)
+                new FlowBuffer((byte)CmdType.SeriesUpdate)
                 .AddString(baseName)
                 .AddInt64(seriesUpd.Id)
                 .AddString(seriesUpd.Name)
@@ -125,9 +112,8 @@ namespace TSDBConnector
                 .AddString(seriesUpd.Looping.Lt)
                 .GetPayloadPack();
 
-            await api.Fetch(reqBuffer, ResponseType.State);
+            await client.Fetch(reqBuffer, ResponseType.State);
         }
-
 
         private static SeriesT ExtractSeries(ref ReadBuffer buffer)
         {
@@ -140,7 +126,7 @@ namespace TSDBConnector
             var loopType = buffer.GetByte();
             var loopTime = buffer.GetString();
             var loopT = new LoopingT(loopType, loopTime);
-            var serT = new SeriesT(name, id, type, comment, vtm, loopT, dataClass);
+            var serT = new SeriesT(name, id, type, comment, vtm, loopT, (DataClass)dataClass);
             return serT;
         }
     }

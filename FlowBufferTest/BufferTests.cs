@@ -1,6 +1,7 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FlowBufferEnvironment;
+using TSDBConnector;
 
 namespace FlowBufferTest
 {
@@ -10,7 +11,7 @@ namespace FlowBufferTest
         [TestMethod]
         public void Int16PackDepack()
         {
-            var buff = new FlowBuffer(CmdType.BaseCreate);
+            var buff = new FlowBuffer((byte)CmdType.BaseCreate);
             var numbers = new Int16[] {12, 12345, -1010, -5432, 0 , -12345, Int16.MaxValue, Int16.MinValue};
             foreach(var num in numbers)
             {
@@ -28,7 +29,7 @@ namespace FlowBufferTest
         [TestMethod]
         public void Int32PackDepack()
         {
-            var buff = new FlowBuffer(CmdType.BaseCreate);
+            var buff = new FlowBuffer((byte)CmdType.BaseCreate);
             var numbers = new Int32[] {12, 44444, -100, 5021231, 0 , -1234567890, Int32.MaxValue, Int32.MinValue};
             foreach(var num in numbers)
             {
@@ -47,7 +48,7 @@ namespace FlowBufferTest
         public void Int64PackDepack()
         {
             var numbers = new Int64[] {12, 32767, -100, -32768, -1234511111111111, Int64.MaxValue, Int64.MinValue};
-            var buff = new FlowBuffer(CmdType.BaseCreate);
+            var buff = new FlowBuffer((byte)CmdType.BaseCreate);
             foreach(var num in numbers)
             {
                 buff.AddInt64(num);
@@ -66,7 +67,7 @@ namespace FlowBufferTest
         public void DoublePackDepack()
         {
             var numbers = new Double[] {12.222, 32767.000001, -100.0, -32768.123123123, -1234511111111111.00000000001, Double.MaxValue, Double.MinValue};
-            var buff = new FlowBuffer(CmdType.BaseCreate);
+            var buff = new FlowBuffer((byte)CmdType.BaseCreate);
             foreach(var num in numbers)
             {
                 buff.AddDouble(num);
@@ -83,7 +84,7 @@ namespace FlowBufferTest
         [TestMethod]
         public void BoolPackDepack()
         {
-            var buff = new FlowBuffer(ProtocolCmd.GetProtocolVersion);
+            var buff = new FlowBuffer((byte)ProtocolCmd.GetProtocolVersion);
             buff.AddBool(true);
             buff.AddBool(false);
             buff.AddBool(true);
@@ -96,7 +97,7 @@ namespace FlowBufferTest
         [TestMethod]
         public void StringPackDepack()
         {
-            var buff = new FlowBuffer(CmdType.BaseCreate);
+            var buff = new FlowBuffer((byte)CmdType.BaseCreate);
             var strs = new string[] {"Kekekek", "qqq0112sld,al", "maw21../123=-1", "", "222value", "", ""};
             foreach(var str in strs)
             {
@@ -121,13 +122,6 @@ namespace FlowBufferTest
         {
 
         }
-
-        // TODO: full mecpack tests
-        /*[TestMethod]
-        public void MecPack()
-        {
-            
-        }*/
 
         private byte[] CutCmdByte(byte[] input)
         {

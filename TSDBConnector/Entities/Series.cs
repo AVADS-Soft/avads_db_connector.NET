@@ -8,7 +8,7 @@ namespace TSDBConnector
         private string comment;
         private Int32 viewTimeMod;
         private LoopingT? loop;
-        private byte dataClass;
+        private DataClass dataClass;
         public SeriesT
         (
             string name,
@@ -17,7 +17,7 @@ namespace TSDBConnector
             string comment = "",
             Int32 viewTimeMod = 0,
             LoopingT? loop = null,
-            byte dataClass = 0
+            DataClass dataClass = DataClass.Atomic
         ) {
             this.name = name;
             this.type = type;
@@ -28,12 +28,23 @@ namespace TSDBConnector
             this.dataClass = dataClass;
         }
 
+        public SeriesT(SeriesT actual)
+        {
+            this.name = actual.name;
+            this.type = actual.type;
+            this.id = actual.id;
+            this.comment = actual.comment;
+            this.viewTimeMod = actual.viewTimeMod;
+            if (loop == null) this.loop = new LoopingT();
+            this.dataClass = actual.dataClass;
+        }
+
         public string Name  { get { return name; } }
         public Int64 Type  { get { return type; } }
         public Int64 Id  { get { return id; } }
         public string Comment { get { return comment; } }
         public Int32 ViewTimeMod  { get { return viewTimeMod; } }
         public LoopingT Looping  { get { return loop ?? new LoopingT(); } }
-        public byte Class  { get { return dataClass; } }
+        public DataClass DataClass  { get { return dataClass; } }
     }
 }
