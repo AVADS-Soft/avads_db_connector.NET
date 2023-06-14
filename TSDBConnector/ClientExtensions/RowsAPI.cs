@@ -43,7 +43,7 @@ namespace TSDBConnector
             if (baseId != -1)
             {
                 var reqPack = 
-                    new FlowBuffer(CmdType.DataAddRow)
+                    new FlowBuffer(CmdType.DataAddRows)
                     .AddInt64(baseId)
                     .AddBytes(rows.Cache)
                     .GetPayloadPack();

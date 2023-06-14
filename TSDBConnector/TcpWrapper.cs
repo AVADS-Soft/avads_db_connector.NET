@@ -70,10 +70,10 @@ namespace TSDBConnector
                 }
                 catch (Exception e)
                 {
-                    throw new Exception("Error on read" + e.Message);
+                    throw new TsdbProtocolException("Error on read" + e.Message);
                 }
             }
-            throw new Exception("Cannot read");
+            throw new TsdbProtocolException("Cannot read");
         }
 
         public async Task WriteBytesAsync(byte[] bytes)
@@ -86,7 +86,7 @@ namespace TSDBConnector
             {
                 await stream.WriteAsync(bytes, 0, bytes.Length);
             }
-            else throw new Exception("Cannot write");
+            else throw new TsdbProtocolException("Cannot write");
         }
 
         public async Task<byte[]> ReadAnswerBytes()
@@ -108,8 +108,6 @@ namespace TSDBConnector
             return ByteConverter.BytesToInt32(packLenBytes);
         }
 
-
-
         public void Dispose()
         {
             stream?.Dispose();
@@ -130,7 +128,7 @@ class TsdbConnectionRefused : Exception
 
 class TsdbProtocolException : Exception
 {
-    public TsdbProtocolException() {}
+    public TsdbProtocolException(string msg): base (msg){}
 }
 
 class TsdbCustomError : Exception

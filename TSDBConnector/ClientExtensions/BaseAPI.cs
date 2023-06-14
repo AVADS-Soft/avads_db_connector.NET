@@ -101,17 +101,19 @@ namespace TSDBConnector
             }
         }
 
-        public static async Task OpenBase(this TsdbClient api, string baseName)
+        public static async Task OpenBase(this TsdbClient api, string baseName, long id = -1)
         {
-            long id;
-            if (api.TryOpenBases.TryGetValue(baseName, out id) || api.OpenedBases.TryGetValue(baseName, out id))
+            if (api.TryOpenBases.TryGetValue(baseName, out id))
             {
                 return;
             }
-            var random = new Random();
 
-            // TODO: sure that id is unique 
-            id = random.Next();
+            if (id == -1)
+            {
+                var random = new Random();
+                id = random.Next();
+            }
+
             api.TryOpenBases.Add(baseName, id);
 
             var reqPack = new FlowBuffer(CmdType.BaseOpen).AddInt64(id).AddString(baseName).GetPayloadPack();
@@ -131,7 +133,6 @@ namespace TSDBConnector
                 api.OpenedBases.Remove(baseName);
             }
         }
-
 
 
         private static BaseT ExtractBase(ref ReadBuffer buffer)
