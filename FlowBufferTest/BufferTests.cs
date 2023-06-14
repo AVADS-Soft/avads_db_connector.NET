@@ -112,17 +112,6 @@ namespace FlowBufferTest
             CollectionAssert.AreEqual(strs, extracted);
         }
 
-        [TestMethod]
-        public void MapPackDepack()
-        {       
-        }
-
-        [TestMethod]
-        public void PacketPackDepack()
-        {
-
-        }
-
         private byte[] CutCmdByte(byte[] input)
         {
             var newLen = input.Length - 1;

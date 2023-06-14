@@ -16,7 +16,7 @@ namespace TSDBConnector
             var result = new List<SeriesT>();
             for (int i = 0; i < count; i++)
             {
-                var serT = ExtractSeries(ref readBuffer);
+                var serT = ExtractSeries(ref readBuffer, baseName);
                 result.Add(serT);
             }
             return result;
@@ -33,7 +33,7 @@ namespace TSDBConnector
                     .GetPayloadPack();
 
                 var buffer = await client.Fetch(reqPack);
-                var seriesT = ExtractSeries(ref buffer);
+                var seriesT = ExtractSeries(ref buffer, baseName);
                 return seriesT;
             }
             catch (Exception e)
@@ -57,7 +57,7 @@ namespace TSDBConnector
                     .GetPayloadPack();
 
                 var buffer = await client.Fetch(reqPack);
-                var seriesT = ExtractSeries(ref buffer);
+                var seriesT = ExtractSeries(ref buffer, baseName);
                 return seriesT;
             }
             catch (Exception e)
@@ -70,7 +70,7 @@ namespace TSDBConnector
             }
         }
 
-        public static async Task AddSeries(this TsdbClient client, string baseName, SeriesT series)
+        public static async Task CreateSeries(this TsdbClient client, string baseName, SeriesT series)
         {
             var reqPack = 
                 new FlowBuffer((byte)CmdType.SeriesCreate)
@@ -115,7 +115,7 @@ namespace TSDBConnector
             await client.Fetch(reqBuffer, ResponseType.State);
         }
 
-        private static SeriesT ExtractSeries(ref ReadBuffer buffer)
+        private static SeriesT ExtractSeries(ref ReadBuffer buffer, string baseName)
         {
             var id = buffer.GetInt64();
             var name = buffer.GetString();
@@ -126,7 +126,7 @@ namespace TSDBConnector
             var loopType = buffer.GetByte();
             var loopTime = buffer.GetString();
             var loopT = new LoopingT(loopType, loopTime);
-            var serT = new SeriesT(name, id, type, comment, vtm, loopT, (DataClass)dataClass);
+            var serT = new SeriesT(name, id, type, baseName, comment, vtm, loopT, (DataClass)dataClass);
             return serT;
         }
     }

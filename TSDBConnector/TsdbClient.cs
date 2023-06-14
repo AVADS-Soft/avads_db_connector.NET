@@ -1,9 +1,6 @@
-using System;
 using System.Net.Sockets;
 using System.Security.Cryptography;
-using System.Threading.Tasks;
 using FlowBufferEnvironment;
-
 namespace TSDBConnector
 {
     public class TsdbClient : IDisposable
@@ -19,7 +16,6 @@ namespace TSDBConnector
         public long Version { get => version; }
         public bool IsConnected { get => isConnected; }
         public string SessionKey { get => sessionKey; }
-        // При значении -1 нет лимита на количество попыток восстановить сессию
         public int ReconnectAttemptsCount { get => reconnectAttemptsCount; set => reconnectAttemptsCount = value; }
         public int ReconnectAttemptsInterval { get => reconnectAttemptsInterval; set => reconnectAttemptsInterval = value; }
         public Dictionary<string, long> TryOpenBases = new();
@@ -123,7 +119,6 @@ namespace TSDBConnector
                 throw new TsdbCustomError(err);
             }
         }
-
 
         public async Task Reconnect()
         {            

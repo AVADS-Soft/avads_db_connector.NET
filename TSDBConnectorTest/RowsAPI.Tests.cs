@@ -5,40 +5,27 @@ using TSDBConnector;
 namespace TSDBConnectorTest
 {
     [TestClass]
-    public class DataIntegrationTests
+    public class RowsAPITests
     {
         TsdbCredentials credentials = new TsdbCredentials("127.0.0.1", 7777, "admin", "admin");
 
-        // TODO: create [class initialize] method, mounting environment
-        // and [clean up] on dispose    
-        
         [TestMethod]
         public async Task TestAddRec()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
-                var nanosec = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                var nanosec = Now();
                 await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, nanosec, 0, 16);
 
             }
@@ -52,34 +39,25 @@ namespace TSDBConnectorTest
             }
         }
 
-
+        // testcase if base is not open
+        // testcase if no data
         [TestMethod]
         public async Task TestGetLastValue()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
-                var now = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                var now = Now();
                 var value = 123123;
                 uint quality = 252;
 
@@ -89,8 +67,6 @@ namespace TSDBConnectorTest
 
                 if (lastValue == null) throw new ArgumentNullException();
 
-                // TODO: testcase if base is not open
-                // TODO: testcase if no data
                 Assert.AreEqual(lastValue.T,  now);
                 CollectionAssert.AreEqual(lastValue.Value,  ByteConverter.Int64ToBytes(value));
                 CollectionAssert.AreEqual(lastValue.Q,  ByteConverter.Int32ToBytes((int)quality));
@@ -106,33 +82,24 @@ namespace TSDBConnectorTest
             }
         }
 
+        // testcase: if response time mark is unequal with requested, should be a nearest point
         [TestMethod]
         public async Task TestGetValueAtTime()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
-                var origin = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                var origin = Now();
                 var reqTime = origin;
                 var value = 0;
                 uint quality = 0;
@@ -145,14 +112,10 @@ namespace TSDBConnectorTest
                     quality += 10;
                 }
 
-                // TODO: testcase if base is not open
-                // TODO: testcase if no data
-                // TODO: testcase if response time mark is unequal with requested, should be a nearest point
                 var atTime = await client.DataGetValueAtTime(baseName, seriesEx.Id, seriesEx.DataClass, reqTime);
 
                 if (atTime == null) throw new ArgumentNullException();
 
-                // TODO: shorthand method for rec assert
                 Assert.AreEqual(atTime.T, reqTime);
                 CollectionAssert.AreEqual(atTime.Value,  ByteConverter.Int64ToBytes(0));
                 CollectionAssert.AreEqual(atTime.Q,  ByteConverter.Int32ToBytes(0));
@@ -172,30 +135,20 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestGetCP()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
-                var now = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                var now = Now();
                 var value = 0;
                 uint quality = 0;
 
@@ -219,31 +172,20 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestGetRange()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
-                // TODO: refactor duplicates
-                var origin = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                var origin = Now();
                 var reqTime = origin;
                 var value = 0;
                 uint quality = 0;
@@ -255,17 +197,10 @@ namespace TSDBConnectorTest
                     value += 100;
                     quality += 10;
                 }
-                // TODO: test over various cases of arguments
-
-                // TODO: error: cannot be used with type any
-                // it depens of 'convert' argument, from tcp it always nil
                  
                 var cpRec = await client.DataGetRange(baseName, seriesEx.Id, 0, SeekDirection.ToMax, 100, reqTime, origin, 0);
-
-                var cpRecDpi = await client.DataGetRange(baseName, seriesEx.Id, 0, SeekDirection.ToMax, 100, reqTime, origin, 10);
-
                 Assert.IsNotNull(cpRec);
-
+                var cpRecDpi = await client.DataGetRange(baseName, seriesEx.Id, 0, SeekDirection.ToMax, 100, reqTime, origin, 10);                
                 Assert.IsNotNull(cpRecDpi);
             }
             catch (Exception e)
@@ -278,33 +213,24 @@ namespace TSDBConnectorTest
             }
         }
 
+        // testcase: other seek direction
         [TestMethod]
         public async Task TestGetFromCP()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
-                var origin = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                var origin = Now();
                 var reqTime = origin;
                 var value = 0;
                 uint quality = 0;
@@ -319,7 +245,7 @@ namespace TSDBConnectorTest
                 var cp = await client.DataGetCP(baseName, seriesEx.Id, reqTime);
                 Assert.IsNotNull(cp);
                 Assert.AreNotEqual(cp, string.Empty);
-                // TODO: testcase other direction
+                
                 var recsCp = await client.DataGetFromCP(baseName, 0, cp, SeekDirection.ToMax, 100);
 
                 Assert.IsNotNull(recsCp);
@@ -344,33 +270,24 @@ namespace TSDBConnectorTest
             }
         }
 
+        // testcase: other direction
         [TestMethod]
         public async Task TestRangeGetFromCP()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
-                var origin = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                var origin = Now();
                 var reqTime = origin;
                 var value = 0;
                 uint quality = 0;
@@ -385,7 +302,7 @@ namespace TSDBConnectorTest
                 var cp = await client.DataGetCP(baseName, seriesEx.Id, reqTime);
                 Assert.IsNotNull(cp);
                 Assert.AreNotEqual(cp, string.Empty);
-                // TODO: testcase other direction
+
                 var recsCp = await client.DataGetRangeFromCP(baseName, 0, cp, SeekDirection.ToMax, 100, reqTime, origin, 100);
 
                 Assert.IsNotNull(recsCp);
@@ -413,30 +330,20 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestDeleteRow()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
-                var now = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                var now = Now();
 
                 await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, now - 10000000, 20, 20);
 
@@ -471,30 +378,20 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestDeleteRows()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
-                var now = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                var now = Now();
                 var reqTime = now;
                 var value = 0;
                 uint quality = 0;
@@ -527,30 +424,20 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestGetBoundary()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
-                var now = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                var now = Now();
                 var reqTime = now;
                 var value = 0;
                 uint quality = 0;
@@ -577,32 +464,22 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestAddRows()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
+                
                 var boundsBefore = await client.DataGetBoundary(baseName, seriesEx.Id);
 
                 var count = 10;
-                // TODO: rename Class property to dataClass for consistentcy
                 var cache = CreateRowsCache(seriesEx.Id, seriesEx.DataClass, count);
                
                 await client.DataAddRows(baseName, cache);
@@ -610,8 +487,6 @@ namespace TSDBConnectorTest
                 var boundsAfter = await client.DataGetBoundary(baseName, seriesEx.Id);
                 Assert.IsNotNull(boundsAfter);
                 Assert.AreEqual(boundsBefore?.RowCount ?? 0, boundsAfter.RowCount - count);
-
-
             }
             catch (Exception e)
             {
@@ -626,43 +501,30 @@ namespace TSDBConnectorTest
         [TestMethod]
         public async Task TestAddRowsCache()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
+
                 var boundsBefore = await client.DataGetBoundary(baseName, seriesEx.Id);
 
                 var count = 10;
-                // TODO: rename Class property to dataClass for consistentcy
+
                 var cache = CreateRowsCache(seriesEx.Id, seriesEx.DataClass, count);
                
                 var cacheCount = await client.DataAddRowsCache(baseName, cache);
 
-                //Assert.AreEqual(cacheCount, count);
-
                 var boundsAfter = await client.DataGetBoundary(baseName, seriesEx.Id);
                 Assert.IsNotNull(boundsAfter);
                 Assert.AreEqual((boundsBefore?.RowCount ?? 0) + count, boundsAfter.RowCount);
-
-
             }
             catch (Exception e)
             {
@@ -677,7 +539,7 @@ namespace TSDBConnectorTest
         private RowsCacheT CreateRowsCache(long seriesId, DataClass dataClass, int count)
         {
             var cache = new RowsCacheT();
-            var reqTime = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+            var reqTime = Now();
             var now = reqTime;
             var value = 0;
             uint quality = 0;
@@ -692,30 +554,20 @@ namespace TSDBConnectorTest
         }
 
 
-        [TestMethod]
+        //[TestMethod]
         public async Task TestGeneration()
         {
-            var baseName = "TEST_Series";
+            var baseName = "";
             using var client = new TsdbClient(credentials);
             try
             {
                 await client.Init();
                 Assert.IsTrue(client.IsConnected);
 
-                SeriesT? seriesEx = null;
-                if (await client.GetBase(baseName) == null)
-                {
-                    var tuple = await IntegrationTests.PrepareSeries(client);
-                    baseName = tuple.Item2;
-                    seriesEx = tuple.Item1;
-                }
-                if (seriesEx == null)
-                {
-                    seriesEx = await client.GetSeries(baseName, "zero");
-                }
-
-                if (seriesEx == null) throw new ArgumentNullException();
-
+                var seriesEx = await TestHelper.PrepareSeries(client);
+                Assert.IsNotNull(seriesEx);
+                
+                baseName = seriesEx.ParentBaseName;
                 await client.OpenBase(baseName);
 
                 var value = 0;
@@ -724,7 +576,7 @@ namespace TSDBConnectorTest
                 for (int i = 0; i < 1000; i ++)
                 {
                     if (value > 100) value = 0;
-                    var now = System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+                    var now = Now();
                     await client.DataAddRow(baseName, seriesEx.Id, seriesEx.DataClass, now, quality, value);
                     value++;
 
@@ -740,7 +592,10 @@ namespace TSDBConnectorTest
                 await client.CloseBase(baseName);
             }
         }
-    }
 
-    // TODO: cache interact test cases
+        private long Now()
+        {
+            return System.DateTimeOffset.Now.ToUnixTimeMilliseconds() * 1000000;
+        }
+    }
 }
