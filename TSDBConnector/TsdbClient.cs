@@ -18,6 +18,8 @@ namespace TSDBConnector
         public string SessionKey { get => sessionKey; }
         public int ReconnectAttemptsCount { get => reconnectAttemptsCount; set => reconnectAttemptsCount = value; }
         public int ReconnectAttemptsInterval { get => reconnectAttemptsInterval; set => reconnectAttemptsInterval = value; }
+        public bool TcpUseTimeout { get => this.wrap.UseTimeout; set => this.wrap.UseTimeout = value; }
+        public uint TcpTimeoutMs { get => this.wrap.Timeout; set => this.wrap.Timeout = value; }
         public Dictionary<string, long> TryOpenBases = new();
         public Dictionary<string, long> OpenedBases = new();
         public TsdbClient(TsdbCredentials credentials)

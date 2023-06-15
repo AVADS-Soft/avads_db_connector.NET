@@ -11,13 +11,8 @@ namespace TSDBConnector
         private int awaitTick = 10;        
         private bool useTimeout = true;
         private int timeout = 5000;
-
-        public int Timeout
-        {
-            get => timeout;
-            set => timeout = value;
-        }
-
+        public uint Timeout { get => (uint)timeout; set => timeout = (int)value; }
+        public bool UseTimeout { get => useTimeout; set => useTimeout = value; }
         public async Task InitConnection(string ip, int port)
         {
             TcpClient client = new();
@@ -42,7 +37,7 @@ namespace TSDBConnector
 
         public async Task<byte[]> ReadBytesAsync(int count)
         {
-            var timeout = Timeout;
+            var timeout = this.timeout;
             if (stream == null)
             {
                 throw new Exception("Connection is not inited");
