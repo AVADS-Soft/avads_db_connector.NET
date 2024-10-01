@@ -127,8 +127,8 @@ namespace TSDBConnectorTest
                 var baseToUpdate = await TestHelper.PrepareBase(client);
                 Assert.IsNotNull(baseToUpdate);
 
-                var newName = baseToUpdate.Name + "_upd";
-                var updateInfo = new BaseT(newName, baseToUpdate.Path, baseToUpdate.DbSize, comment: "UPDATE SUCCESS");
+                //var newName = baseToUpdate.Name + "_upd";
+                var updateInfo = new BaseT(baseToUpdate.Name, baseToUpdate.Path, baseToUpdate.DbSize, comment: "UPDATE SUCCESS");
                 await client.UpdateBase(baseToUpdate.Name, updateInfo);
 
                 var updated = await client.GetBase(updateInfo.Name);

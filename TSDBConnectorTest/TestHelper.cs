@@ -63,6 +63,7 @@ namespace TSDBConnectorTest
 
         public static async Task<List<string>> GenerateSeries(TsdbClient client, string baseName, int count)
         {
+            await client.OpenBase(baseName);
             var list = new List<string>();
             for (int i = 0; i < count; i++)
             {
@@ -74,6 +75,9 @@ namespace TSDBConnectorTest
                     list.Add(seriesName);
                 }
                 catch { continue; }
+                finally {
+                    await client.CloseBase(baseName);
+                }
             }
             return list;
         }
